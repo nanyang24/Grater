@@ -24,7 +24,7 @@ export interface Position {
 export type SourceType = 'module' | 'script';
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface Statement extends Node {}
+export type Statement = any;
 
 // Programs
 export interface Program extends Node {

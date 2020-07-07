@@ -1,17 +1,35 @@
-/* eslint-disable no-unused-vars */
+import { nextToken } from '../tokenizer/scaner';
 import createParserState from './createParserState';
 
 // typings
 import * as ESTree from '../es-tree';
+import { Token } from '../tokenizer/token';
 import { IParserState } from './type';
+
+const parseStatementItem = (parser: IParserState) => parser;
+
+const parseStatements = (parser :IParserState) => {
+  // Initialize token
+  nextToken(parser);
+
+  const statements: ESTree.Statement[] = [];
+
+  while (parser.token !== Token.EOF) {
+    statements.push(
+      parseStatementItem(parser),
+    );
+  }
+  return statements;
+};
 
 const parserMachine = (source: string): ESTree.Program => {
   // Initialize parser state
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const parserState: IParserState = createParserState(source);
   const sourceType: ESTree.SourceType = 'script';
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const body: any[] = [];
+
+  let body: any[] = [];
+
+  body = parseStatements(parserState);
 
   const nodeTree: ESTree.Program = {
     type: 'Program',
@@ -22,5 +40,4 @@ const parserMachine = (source: string): ESTree.Program => {
   return nodeTree;
 };
 
-// eslint-disable-next-line import/prefer-default-export
 export { parserMachine };

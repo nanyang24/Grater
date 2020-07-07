@@ -1,5 +1,7 @@
+import { Token } from '../tokenizer/token';
+
 /**
- * The parser state.
+ * The Parser State.
  */
 export interface IParserState {
   source: string;
@@ -13,4 +15,13 @@ export interface IParserState {
   linePos: number;
   end: number;
   currentChar: number;
+
+  token?: Token;
+  tokenPos?: number;
+  tokenRaw?: string;
+  tokenValue?: any;
+  tokenRegExp: void | {
+    pattern: string;
+    flags: string;
+  };
 }
