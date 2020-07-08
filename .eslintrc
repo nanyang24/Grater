@@ -27,6 +27,7 @@
         ],
         "import/prefer-default-export": 0,
         "@typescript-eslint/no-explicit-any": "off",
+        "@typescript-eslint/no-empty-interface": "off",
         "no-param-reassign": 0,
         "no-bitwise": 0,
         "default-case": 0,

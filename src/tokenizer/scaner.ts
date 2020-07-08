@@ -5,8 +5,6 @@ import { TokenPickUpFromASCII, forwardChar } from './utils';
 
 export function scan(parser: IParserState): Token {
   // const { source } = parser;
-
-  //
   while (parser.index < parser.end) {
     parser.tokenPos = parser.index;
     parser.colPos = parser.column;

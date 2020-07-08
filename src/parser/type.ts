@@ -16,10 +16,10 @@ export interface IParserState {
   end: number;
   currentChar: number;
 
-  token?: Token;
-  tokenPos?: number;
-  tokenRaw?: string;
-  tokenValue?: any;
+  token: Token;
+  tokenPos: number;
+  tokenRaw: string;
+  tokenValue: any;
   tokenRegExp: void | {
     pattern: string;
     flags: string;

@@ -6,18 +6,51 @@ import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
 import { IParserState } from './type';
 
-const parseStatementItem = (parser: IParserState) => parser;
+// eslint-disable-next-line arrow-body-style
+const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
+  return node;
+};
 
-const parseStatements = (parser :IParserState) => {
+const parseIdentifier = (parser: IParserState) => {
+  const { tokenValue } = parser;
+  nextToken(parser);
+
+  return wrapNode(parser, {
+    type: 'Identifier',
+    name: tokenValue,
+  });
+};
+
+const parseNormalExpression = (parser: IParserState): ESTree.Statement | ESTree.Expression => {
+  let expression;
+  if ((parser.token & Token.IsIdentifier) === Token.IsIdentifier) {
+    expression = parseIdentifier(parser);
+  }
+
+  return expression;
+};
+
+// eslint-disable-next-line arrow-body-style
+const parseStatement = (parser: IParserState): ESTree.Statement => {
+  return parseNormalExpression(parser);
+};
+
+const parseStatementItem = (parser: IParserState): ESTree.Statement => {
+  switch (parser.token) {
+    default: {
+      return parseStatement(parser);
+    }
+  }
+};
+
+const parseStatementsList = (parser: IParserState) => {
   // Initialize token
   nextToken(parser);
 
   const statements: ESTree.Statement[] = [];
 
   while (parser.token !== Token.EOF) {
-    statements.push(
-      parseStatementItem(parser),
-    );
+    statements.push(parseStatementItem(parser));
   }
   return statements;
 };
@@ -29,7 +62,7 @@ const parserMachine = (source: string): ESTree.Program => {
 
   let body: any[] = [];
 
-  body = parseStatements(parserState);
+  body = parseStatementsList(parserState);
 
   const nodeTree: ESTree.Program = {
     type: 'Program',

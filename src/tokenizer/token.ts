@@ -1,7 +1,13 @@
-export const enum Token {
-  // https://stackoverflow.com/questions/6126439/what-does-0xff-do
-  Musk = 0xFF,
+/*
+ * Lexical grammar
+ * https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Lexical_grammar
+ */
 
+export enum Token {
+  // https://stackoverflow.com/questions/6126439/what-does-0xff-do
+  Musk = 0xff,
+
+  IsIdentifier = 1 << 11,
   Keyword = 1 << 12,
 
   Unknown = -1,
@@ -9,7 +15,7 @@ export const enum Token {
   EOF = 0,
 
   /* Constants/Bindings */
-  Identifier = 1,
+  Identifier = 1 | IsIdentifier,
   NumericLiteral = 2,
   StringLiteral = 3,
   RegularExpression = 4,
@@ -86,7 +92,7 @@ export const enum Token {
   BitwiseOr = 69,
   BitwiseXor = 70,
 
-    /* Variable declaration kinds */
+  /* Variable declaration */
   VarKeyword = 71,
   LetKeyword = 72,
   ConstKeyword = 73,
@@ -117,7 +123,7 @@ export const enum Token {
   TryKeyword = 96,
   WhileKeyword = 97,
   WithKeyword = 98,
-    /* Strict mode reserved words */
+  /* Strict mode reserved words */
   ImplementsKeyword = 99,
   InterfaceKeyword = 100,
   PackageKeyword = 101,
@@ -152,10 +158,11 @@ export const enum Token {
   EscapedIdentifier = 204,
   Template = 205,
   Decorator = 206,
-    Target = 207,
+  Target = 207,
   Meta = 208,
 }
 
+// Reserved keywords of ECMAScript
 export const mapKeywordTable: { [key: string]: Token } = Object.create(null, {
   this: { value: Token.ThisKeyword },
   function: { value: Token.FunctionKeyword },

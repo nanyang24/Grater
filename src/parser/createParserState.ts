@@ -1,4 +1,5 @@
 import { IParserState } from './type';
+import { Token } from '../tokenizer/token';
 
 export default function createParserState(source: string): IParserState {
   return {
@@ -13,5 +14,11 @@ export default function createParserState(source: string): IParserState {
     linePos: 0,
     startLine: 1,
     currentChar: source.charCodeAt(0),
+
+    token: Token.EOF,
+    tokenPos: 0,
+    tokenRaw: '',
+    tokenValue: '',
+    tokenRegExp: undefined,
   };
 }
