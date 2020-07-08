@@ -17,6 +17,7 @@
     "node": ">=6.0.0"
   },
   "scripts": {
+    "dev": "tsc-watch --onSuccess 'node ./dist/grater.js'",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write"
@@ -43,6 +44,7 @@
     "eslint-plugin-import": "^2.22.0",
     "husky": "^4.2.5",
     "lint-staged": "^10.2.11",
-    "prettier": "^2.0.5"
+    "prettier": "^2.0.5",
+    "tsc-watch": "^4.2.9"
   }
 }
