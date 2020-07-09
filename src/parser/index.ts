@@ -1,4 +1,4 @@
-import { nextToken } from '../tokenizer/scaner';
+import { nextToken } from '../tokenizer/scanner';
 import createParserState from './createParserState';
 
 // typings

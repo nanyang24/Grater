@@ -1,10 +1,173 @@
+/* eslint-disable */
+
+/*
+ * Identifier Rules
+ * Spec: https://tc39.es/ecma262/#sec-names-and-keywords
+ */
 export const isIdentifierPart = (n: number): boolean => {
   switch (true) {
-    case n === 36: return true;
-    case n >= 48 && n <= 57: return true;
-    case n >= 65 && n <= 90: return true;
-    case n === 95: return true;
-    case n >= 97 && n <= 122: return true;
-    default: return false;
+    case n === 36:
+      return true;
+    case n >= 48 && n <= 57:
+      return true;
+    case n >= 65 && n <= 90:
+      return true;
+    case n === 95:
+      return true;
+    case n >= 97 && n <= 122:
+      return true;
+    default:
+      return false;
   }
 };
+
+export const enum CharSymbol {
+  None = 0,
+  IdentifierStart       = 1 << 0,
+  IdentifierPart        = 1 << 1,
+  KeywordCandidate      = 1 << 2,
+  LineTerminator        = 1 << 3, // https://tc39.es/ecma262/#sec-line-terminators
+  Decimal               = 1 << 4,
+  Octal                 = 1 << 5,
+  Hex                   = 1 << 6,
+  Binary                = 1 << 7,
+  Exponent              = 1 << 8,
+  ImplicitOctalDigits   = 1 << 9,
+  CarriageReturn        = 1 << 10,
+  LineFeed              = 1 << 11,
+  Underscore            = 1 << 12,
+  StringLiteral         = 1 << 13,
+  JSXToken              = 1 << 14,
+  Hyphen                = 1 << 15,
+}
+
+export const CharTypes = [
+  CharSymbol.None /* 0x00   */,
+  CharSymbol.None /* 0x01   */,
+  CharSymbol.None /* 0x02   */,
+  CharSymbol.None /* 0x03   */,
+  CharSymbol.None /* 0x04   */,
+  CharSymbol.None /* 0x05   */,
+  CharSymbol.None /* 0x06   */,
+  CharSymbol.None /* 0x07   */,
+  CharSymbol.None /* 0x08   */,
+  CharSymbol.None /* 0x09   */,
+  CharSymbol.LineTerminator /* 0x0A   */,
+  CharSymbol.None /* 0x0B   */,
+  CharSymbol.None /* 0x0C   */,
+  CharSymbol.LineTerminator /* 0x0D   */,
+  CharSymbol.None /* 0x0E   */,
+  CharSymbol.None /* 0x0F   */,
+  CharSymbol.None /* 0x10   */,
+  CharSymbol.None /* 0x11   */,
+  CharSymbol.None /* 0x12   */,
+  CharSymbol.None /* 0x13   */,
+  CharSymbol.None /* 0x14   */,
+  CharSymbol.None /* 0x15   */,
+  CharSymbol.None /* 0x16   */,
+  CharSymbol.None /* 0x17   */,
+  CharSymbol.None /* 0x18   */,
+  CharSymbol.None /* 0x19   */,
+  CharSymbol.None /* 0x1A   */,
+  CharSymbol.None /* 0x1B   */,
+  CharSymbol.None /* 0x1C   */,
+  CharSymbol.None /* 0x1D   */,
+  CharSymbol.None /* 0x1E   */,
+  CharSymbol.None /* 0x1F   */,
+  CharSymbol.None /* 0x20   */,
+  CharSymbol.None /* 0x21 ! */,
+  CharSymbol.StringLiteral /* 0x22   */,
+  CharSymbol.None /* 0x23 # */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x24 $ */,
+  CharSymbol.None /* 0x25 % */,
+  CharSymbol.None /* 0x26 & */,
+  CharSymbol.StringLiteral /* 0x27   */,
+  CharSymbol.None /* 0x28   */,
+  CharSymbol.None /* 0x29   */,
+  CharSymbol.None /* 0x2A   */,
+  CharSymbol.Exponent /* 0x2B   */,
+  CharSymbol.None /* 0x2C   */,
+  CharSymbol.Exponent | CharSymbol.Hyphen /* 0x2D   */,
+  CharSymbol.None /* 0x2E   */,
+  CharSymbol.None /* 0x2F   */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Binary | CharSymbol.Octal | CharSymbol.Hex /* 0x30 0 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Binary | CharSymbol.Octal | CharSymbol.Hex /* 0x31 1 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Octal | CharSymbol.Hex /* 0x32 2 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Octal | CharSymbol.Hex /* 0x33 3 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Octal | CharSymbol.Hex /* 0x34 4 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Octal | CharSymbol.Hex /* 0x35 5 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Octal | CharSymbol.Hex /* 0x36 6 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.Octal | CharSymbol.Hex /* 0x37 7 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.ImplicitOctalDigits | CharSymbol.Hex /* 0x38 8 */,
+  CharSymbol.IdentifierPart | CharSymbol.Decimal | CharSymbol.ImplicitOctalDigits | CharSymbol.Hex /* 0x39 9 */,
+  CharSymbol.None /* 0x3A   */,
+  CharSymbol.None /* 0x3B   */,
+  CharSymbol.JSXToken /* 0x3C < */,
+  CharSymbol.None /* 0x3D = */,
+  CharSymbol.None /* 0x3E > */,
+  CharSymbol.None /* 0x3F   */,
+  CharSymbol.None /* 0x40 @ */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.Hex /* 0x41 A */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.Hex /* 0x42 B */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.Hex /* 0x43 C */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.Hex /* 0x44 D */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.Hex /* 0x45 E */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.Hex /* 0x46 F */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x47 G */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x48 H */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x49 I */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x4A J */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x4B K */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x4C L */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x4D M */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x4E N */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x4F O */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x50 P */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x51 Q */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x52 R */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x53 S */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x54 T */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x55 U */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x56 V */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x57 W */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x58 X */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x59 Y */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart /* 0x5A Z */,
+  CharSymbol.None /* 0x5B   */,
+  CharSymbol.IdentifierStart /* 0x5C   */,
+  CharSymbol.None /* 0x5D   */,
+  CharSymbol.None /* 0x5E   */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.Underscore/* 0x5F _ */,
+  CharSymbol.None /* 0x60   */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate | CharSymbol.Hex /* 0x61 a */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate | CharSymbol.Hex /* 0x62 b */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate | CharSymbol.Hex /* 0x63 c */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate | CharSymbol.Hex /* 0x64 d */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate | CharSymbol.Hex /* 0x65 e */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate | CharSymbol.Hex /* 0x66 f */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x67 g */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x68 h */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x69 i */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x6A j */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x6B k */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x6C l */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x6D m */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x6E n */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x6F o */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x70 p */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x71 q */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x72 r */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x73 s */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x74 t */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x75 u */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x76 v */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x77 w */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x78 x */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x79 y */,
+  CharSymbol.IdentifierStart | CharSymbol.IdentifierPart | CharSymbol.KeywordCandidate /* 0x7A z */,
+  CharSymbol.JSXToken /* 0x7B */,
+  CharSymbol.None /* 0x7C */,
+  CharSymbol.None /* 0x7D */,
+  CharSymbol.None /* 0x7E */,
+  CharSymbol.None /* 0x7F */
+];

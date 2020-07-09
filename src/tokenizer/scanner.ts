@@ -1,10 +1,12 @@
 import { IParserState } from '../parser/type';
 import { scanIdentifier } from './identifier';
+import { scanString } from './string';
 import { Token } from './token';
 import { TokenPickUpFromASCII, forwardChar } from './utils';
 
 export function scan(parser: IParserState): Token {
   // const { source } = parser;
+  // scan the whole stream
   while (parser.index < parser.end) {
     parser.tokenPos = parser.index;
     parser.colPos = parser.column;
@@ -22,6 +24,17 @@ export function scan(parser: IParserState): Token {
           return token;
         }
 
+        // general white-space
+        case Token.WhiteSpace: {
+          forwardChar(parser);
+          break;
+        }
+        // `'string'`, `"string"`
+        case Token.StringLiteral: {
+          return scanString(parser, char);
+        }
+
+        //  `A`...`Z`, `_internal`, `$value`
         case Token.Identifier: {
           return scanIdentifier(parser);
         }
