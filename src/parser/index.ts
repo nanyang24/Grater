@@ -11,8 +11,20 @@ const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
   return node;
 };
 
+const parseLiteral = (parser: IParserState) => {
+  const { tokenValue } = parser;
+
+  nextToken(parser);
+
+  return wrapNode(parser, {
+    type: 'Literal',
+    name: tokenValue,
+  });
+};
+
 const parseIdentifier = (parser: IParserState) => {
   const { tokenValue } = parser;
+
   nextToken(parser);
 
   return wrapNode(parser, {
@@ -21,10 +33,16 @@ const parseIdentifier = (parser: IParserState) => {
   });
 };
 
-const parseNormalExpression = (parser: IParserState): ESTree.Statement | ESTree.Expression => {
+const parseNormalExpression = (
+  parser: IParserState,
+): ESTree.Statement | ESTree.Expression => {
   let expression;
   if ((parser.token & Token.IsIdentifier) === Token.IsIdentifier) {
     expression = parseIdentifier(parser);
+  }
+
+  if ((parser.token & Token.IsStringOrNumber) === Token.IsStringOrNumber) {
+    expression = parseLiteral(parser);
   }
 
   return expression;

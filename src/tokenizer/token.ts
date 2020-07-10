@@ -8,6 +8,8 @@ export enum Token {
   Musk = 0xff,
 
   IsIdentifier = 1 << 11,
+  IsStringOrNumber = 1 << 12,
+
   Keyword = 1 << 12,
 
   Unknown = -1,
@@ -16,8 +18,8 @@ export enum Token {
 
   /* Constants/Bindings */
   Identifier = 1 | IsIdentifier,
-  NumericLiteral = 2,
-  StringLiteral = 3,
+  NumericLiteral = 2 | IsStringOrNumber,
+  StringLiteral = 3 | IsStringOrNumber,
   RegularExpression = 4,
   FalseKeyword = 5,
   TrueKeyword = 6,
