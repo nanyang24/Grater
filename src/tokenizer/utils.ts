@@ -1,5 +1,6 @@
 import { Token } from './token';
 import { IParserState } from '../parser/type';
+import { Chars } from './charClassifier';
 
 // ASCII Table map to Token
 export const TokenPickUpFromASCII = [
@@ -133,6 +134,37 @@ export const TokenPickUpFromASCII = [
   /* 127 - Delete             */ Token.Unknown,
 ];
 
-export const forwardChar = (parser: IParserState): number => (
-  (++parser.column) && (parser.currentChar = parser.source.charCodeAt(++parser.index))
-);
+export /**
+ * @param {IParserState} parser
+ * @returns {number}
+ */
+const forwardChar = (parser: IParserState): number =>
+  ++parser.column &&
+  (parser.currentChar = parser.source.charCodeAt(++parser.index));
+
+export /**
+ * better version of fromCharCode, just like the fromCodePoint (ES6)
+ * source: https://stackoverflow.com/a/5446605/8357927
+ * Spec: https://tc39.es/ecma262/#sec-string.fromcharcode
+ * @param {number} code
+ * @returns {string}
+ */
+const betterFromCharCode = (charCodes: number): string => {
+  // String.fromCharCode can only handle code points in the BMP(Basic Multilingual Plane)
+  // https://en.wikipedia.org/wiki/Unicode#Code_point_planes_and_blocks
+  // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/fromCharCode
+  if (charCodes > 0xffff) {
+    charCodes -= 0x10000;
+    return String.fromCharCode(
+      0xd800 + (charCodes >> 10),
+      0xdc00 + (charCodes & 0x3ff),
+    );
+  }
+  return String.fromCharCode(charCodes);
+};
+
+export function toHex(code: number): number {
+  return code < Chars.UpperA
+    ? code - Chars.Zero
+    : (code - Chars.UpperA + 10) & 0xf;
+}

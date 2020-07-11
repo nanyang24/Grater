@@ -32,6 +32,9 @@
     "no-return-assign": 0,
     "no-plusplus": 0,
     "no-empty": 0,
+    "operator-linebreak": 0,
+    "implicit-arrow-linebreak": 0,
+    "no-else-return": 0,
     "max-len": [
       "error",
       {

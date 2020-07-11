@@ -18,7 +18,7 @@ const parseLiteral = (parser: IParserState) => {
 
   return wrapNode(parser, {
     type: 'Literal',
-    name: tokenValue,
+    value: tokenValue,
   });
 };
 
