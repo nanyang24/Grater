@@ -99,7 +99,7 @@ const transformEscape = (parser: IParserState, char: number): number => {
     case Chars.Nine:
       return -1;
 
-    // HexEscapeSequence
+    // HexEscapeSequence : https://tc39.es/ecma262/#prod-HexEscapeSequence
     // \x HexDigit HexDigit
     case Chars.LowerX: {
       const ch1 = forwardChar(parser);
@@ -112,12 +112,24 @@ const transformEscape = (parser: IParserState, char: number): number => {
       return (hi << 4) | lo;
     }
 
-    // UnicodeEscapeSequence
-    // \u HexDigit HexDigit HexDigit HexDigit
-    // \u { HexDigit HexDigit HexDigit ... }
+    // UnicodeEscapeSequence : https://tc39.es/ecma262/#prod-UnicodeEscapeSequence
+    // 1. \u HexDigit HexDigit HexDigit HexDigit
+    // desc: 4-digit Unicode escape sequences, Characters with codes between 0 and 65535 (2^16 - 1)
+    //
+    // 2. \u { CodePoint }
+    // desc: Curly bracket Unicode escape sequences in ES6
+    //       ES6 extends Unicode support to the full code range from 0 to 0x10FFFF.
+    //       In order to escape characters with code greater than 216 - 1
+    //
+    // CodePoint::
+    //     HexDigitsbut only if MV of HexDigits ≤ 0x10FFFF
+    //     HexDigit, HexDigit, HexDigit, ...
+    // HexDigit:: one of
+    //     0/1/2/3/4/5/6/7/8/9/a/b/c/d/e/f/A/B/C/D/E/F
     case Chars.LowerU: {
       const ch = forwardChar(parser);
 
+      // '\u{'
       if (parser.currentChar === Chars.LeftBrace) {
         let code = 0;
         while ((CharTypes[forwardChar(parser)] & CharSymbol.Hex) !== 0) {
