@@ -1,0 +1,11 @@
+{
+    "extension": [
+        "ts"
+    ],
+    "color": true,
+    "reporter": "progress",
+    "require": [
+        "ts-node/register"
+    ],
+    "recursive": true
+}

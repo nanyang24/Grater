@@ -1,3 +1,3 @@
 import { parserMachine as parser } from './parser';
 
-parser('Hello Grater');
+console.log(parser('Hello Grater'));
