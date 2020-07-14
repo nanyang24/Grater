@@ -1,6 +1,7 @@
 import { IParserState } from '../parser/type';
 import { scanIdentifier } from './identifier';
 import { scanString } from './string';
+import { scanNumber } from './numeric';
 import { Token } from './token';
 import { TokenPickUpFromASCII, forwardChar } from './utils';
 
@@ -32,6 +33,10 @@ export function scan(parser: IParserState): Token {
         // `'string'`, `"string"`
         case Token.StringLiteral: {
           return scanString(parser, char);
+        }
+
+        case Token.NumericLiteral: {
+          return scanNumber(parser);
         }
 
         //  `A`...`Z`, `_internal`, `$value`
