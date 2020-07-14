@@ -11,7 +11,7 @@ const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
   return node;
 };
 
-const parseLiteral = (parser: IParserState) => {
+const parseLiteral = (parser: IParserState): ESTree.Literal => {
   const { tokenValue } = parser;
 
   nextToken(parser);
@@ -22,7 +22,7 @@ const parseLiteral = (parser: IParserState) => {
   });
 };
 
-const parseIdentifier = (parser: IParserState) => {
+const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   const { tokenValue } = parser;
 
   nextToken(parser);
@@ -33,7 +33,13 @@ const parseIdentifier = (parser: IParserState) => {
   });
 };
 
-const parseNormalExpression = (
+/**
+ * https://tc39.es/ecma262/index.html#sec-primary-expression
+ *
+ * @param {IParserState} parser
+ * @returns {(ESTree.Statement | ESTree.Expression)}
+ */
+const parsePrimaryExpression = (
   parser: IParserState,
 ): ESTree.Statement | ESTree.Expression => {
   let expression;
@@ -48,9 +54,28 @@ const parseNormalExpression = (
   return expression;
 };
 
+export function parseExpressionStatement(
+  parser: IParserState,
+  expression: ESTree.Expression,
+): ESTree.ExpressionStatement {
+  return wrapNode(parser, {
+    type: 'ExpressionStatement',
+    expression,
+  });
+}
+
+/**
+ * https://tc39.es/ecma262/index.html#sec-ecmascript-language-expressions
+ */
+const parseExpression = (parser: IParserState): ESTree.ExpressionStatement => {
+  const expression: ESTree.Expression = parsePrimaryExpression(parser);
+
+  return parseExpressionStatement(parser, expression);
+};
+
 // eslint-disable-next-line arrow-body-style
 const parseStatement = (parser: IParserState): ESTree.Statement => {
-  return parseNormalExpression(parser);
+  return parseExpression(parser);
 };
 
 const parseStatementItem = (parser: IParserState): ESTree.Statement => {
