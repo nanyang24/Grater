@@ -35,12 +35,12 @@ export interface Program extends Node {
  * Patterns
  * Destructuring binding and assignment are not part of ES5
  */
-interface Pattern extends Node {}
+export interface Pattern extends Node {}
 
 /*
  * Identifier
  */
-interface Identifier extends Expression, Pattern {
+export interface Identifier extends Expression, Pattern {
   type: 'Identifier';
   name: string;
 }
@@ -48,7 +48,7 @@ interface Identifier extends Expression, Pattern {
 /*
  * Literal
  */
-interface Literal extends Expression {
+export interface Literal extends Expression {
   type: 'Literal';
   value: string | boolean | null | number | RegExp;
 }
@@ -56,7 +56,7 @@ interface Literal extends Expression {
 /*
  * Functions
  */
-interface Function extends Node {
+export interface Function extends Node {
   id: Identifier | null;
   params: Pattern[];
   body: FunctionBody;
@@ -139,7 +139,7 @@ export interface ReturnStatement extends Node {
 }
 
 // A labeled statement, i.e., a statement prefixed by a break/continue label.
-interface LabeledStatement extends Node {
+export interface LabeledStatement extends Node {
   type: 'LabeledStatement';
   label: Identifier;
   body: Statement;
@@ -315,7 +315,7 @@ export interface BinaryExpression extends Node {
 }
 
 // A binary operator token.
-type BinaryOperator =
+export type BinaryOperator =
   | '=='
   | '!='
   | '==='
@@ -346,7 +346,7 @@ export interface AssignmentExpression extends Node {
 }
 
 // An assignment operator token.
-type AssignmentOperator =
+export type AssignmentOperator =
   | '='
   | '+='
   | '-='
@@ -368,7 +368,7 @@ export interface LogicalExpression extends Node {
 }
 
 // A logical operator token.
-type LogicalOperator = '||' | '&&';
+export type LogicalOperator = '||' | '&&';
 
 export interface MemberExpression extends Node {
   type: 'MemberExpression';
