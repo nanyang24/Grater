@@ -35,6 +35,7 @@
     "operator-linebreak": 0,
     "implicit-arrow-linebreak": 0,
     "no-else-return": 0,
+    "no-continue": 0,
     "max-len": [
       "error",
       {
