@@ -3,7 +3,15 @@ import { Token } from './token';
 import { forwardChar } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
 
-const parseConsecutiveDecimal = (
+/**
+ * Support for Numeric Separators
+ * Spec: https://github.com/tc39/proposal-numeric-separator
+ * This feature enables developers to make their numeric literals more readable
+ * @param {IParserState} parser
+ * @param {number} char
+ * @returns {string} value
+ */
+const parseDecimalWithSeparator = (
   parser: IParserState,
   char: number,
 ): string => {
@@ -56,7 +64,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
   let value = '';
 
   if (!isFloat) {
-    value = parseConsecutiveDecimal(parser, char);
+    value = parseDecimalWithSeparator(parser, char);
     char = parser.currentChar;
 
     // Consume any decimal dot and fractional component.
@@ -64,13 +72,13 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
       if (forwardChar(parser) === Chars.Underscore) {
         // error
       }
-      value += '.' + parseConsecutiveDecimal(parser, parser.currentChar);
+      value += '.' + parseDecimalWithSeparator(parser, parser.currentChar);
       char = parser.currentChar;
     }
   }
 
   if (isFloat) {
-    value = '.' + parseConsecutiveDecimal(parser, char);
+    value = '.' + parseDecimalWithSeparator(parser, char);
     char = parser.currentChar;
     // Syntax Error
     if (char === Chars.LowerN) {
