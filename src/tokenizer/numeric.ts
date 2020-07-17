@@ -72,7 +72,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
   if (isFloat) {
     value = '.' + parseConsecutiveDecimal(parser, char);
     char = parser.currentChar;
-    // It is a Syntax Error if the MV is not an integer. (dot decimalDigits)
+    // Syntax Error
     if (char === Chars.LowerN) {
       // error
     }

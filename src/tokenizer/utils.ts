@@ -168,3 +168,7 @@ export function toHex(code: number): number {
     ? code - Chars.Zero
     : (code - Chars.UpperA + 10) & 0xf;
 }
+
+export function isDecimalDigit(char: number): boolean {
+  return char >= Chars.Zero && char <= Chars.Nine; // [0, 9]
+}

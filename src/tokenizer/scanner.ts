@@ -2,9 +2,8 @@ import { IParserState } from '../parser/type';
 import { scanIdentifier } from './identifier';
 import { scanString } from './string';
 import { scanNumber } from './numeric';
-import { Chars } from './charClassifier';
 import { Token } from './token';
-import { TokenPickUpFromASCII, forwardChar } from './utils';
+import { TokenPickUpFromASCII, forwardChar, isDecimalDigit } from './utils';
 
 export function scan(parser: IParserState): Token {
   // const { source } = parser;
@@ -38,8 +37,8 @@ export function scan(parser: IParserState): Token {
 
         // .123
         case Token.Period: {
-          const next = forwardChar(parser);
-          if (next >= Chars.Zero && next <= Chars.Nine) {
+          const nextChar = forwardChar(parser);
+          if (isDecimalDigit(nextChar)) {
             return scanNumber(parser, true);
           }
           return Token.Period;
