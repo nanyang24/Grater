@@ -2,6 +2,7 @@ import { IParserState } from '../parser/type';
 import { scanIdentifier } from './identifier';
 import { scanString } from './string';
 import { scanNumber } from './numeric';
+import { Chars } from './charClassifier';
 import { Token } from './token';
 import { TokenPickUpFromASCII, forwardChar } from './utils';
 
@@ -33,6 +34,15 @@ export function scan(parser: IParserState): Token {
         // `'string'`, `"string"`
         case Token.StringLiteral: {
           return scanString(parser, char);
+        }
+
+        // .123
+        case Token.Period: {
+          const next = forwardChar(parser);
+          if (next >= Chars.Zero && next <= Chars.Nine) {
+            return scanNumber(parser, true);
+          }
+          return Token.Period;
         }
 
         case Token.NumericLiteral: {

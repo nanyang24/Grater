@@ -3,20 +3,13 @@ import { Token } from './token';
 import { forwardChar } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
 
-/*
- * https://tc39.es/ecma262/index.html#prod-NumericLiteral
- * https://tc39.es/ecma262/index.html#sec-additional-syntax-numeric-literals
- * NumericLiteral::
- *      DecimalLiteral
- *      DecimalBigIntegerLiteral
- *      NonDecimalIntegerLiteral    BigIntLiteralSuffix
- */
-export const scanNumber = (parser: IParserState): Token => {
-  let char = parser.currentChar;
+const parseConsecutiveDecimal = (
+  parser: IParserState,
+  char: number,
+): string => {
   let value = '';
   let start = parser.index;
   let underscoreError = false;
-
   // Decimal Number
   while (CharTypes[char] & (CharSymbol.Decimal | CharSymbol.Underscore)) {
     // Note: The first char won't be the '_'，Because it's a Identifier in that case.
@@ -44,10 +37,48 @@ export const scanNumber = (parser: IParserState): Token => {
 
   if (underscoreError) {
     // error
-    return -1;
+    return '';
   }
 
-  parser.tokenValue = value + parser.source.substring(start, parser.index);
+  return value + parser.source.substring(start, parser.index);
+};
+
+/*
+ * https://tc39.es/ecma262/index.html#prod-NumericLiteral
+ * https://tc39.es/ecma262/index.html#sec-additional-syntax-numeric-literals
+ * NumericLiteral::
+ *      DecimalLiteral
+ *      DecimalBigIntegerLiteral
+ *      NonDecimalIntegerLiteral    BigIntLiteralSuffix
+ */
+export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
+  let char = parser.currentChar;
+  let value = '';
+
+  if (!isFloat) {
+    value = parseConsecutiveDecimal(parser, char);
+    char = parser.currentChar;
+
+    // Consume any decimal dot and fractional component.
+    if (char === Chars.Period) {
+      if (forwardChar(parser) === Chars.Underscore) {
+        // error
+      }
+      value += '.' + parseConsecutiveDecimal(parser, parser.currentChar);
+      char = parser.currentChar;
+    }
+  }
+
+  if (isFloat) {
+    value = '.' + parseConsecutiveDecimal(parser, char);
+    char = parser.currentChar;
+    // It is a Syntax Error if the MV is not an integer. (dot decimalDigits)
+    if (char === Chars.LowerN) {
+      // error
+    }
+  }
+
+  parser.tokenValue = parseFloat(value);
 
   return Token.NumericLiteral;
 };

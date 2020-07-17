@@ -11,6 +11,11 @@
     "plugin:import/typescript",
     "airbnb-base"
   ],
+  "env": {
+    "commonjs": true,
+    "node": true,
+    "mocha": true
+  },
   "rules": {
     "import/extensions": [
       "error",
@@ -36,6 +41,8 @@
     "implicit-arrow-linebreak": 0,
     "no-else-return": 0,
     "no-continue": 0,
+    "no-multi-str": 0,
+    "prefer-template": 0,
     "max-len": [
       "error",
       {
