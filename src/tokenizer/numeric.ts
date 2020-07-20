@@ -1,6 +1,6 @@
 import { IParserState } from '../parser/type';
 import { Token } from './token';
-import { forwardChar } from './utils';
+import { forwardChar, letterCaseInsensitive, toHex } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
 
 /**
@@ -17,7 +17,7 @@ const parseDecimalWithSeparator = (
 ): string => {
   let value = '';
   let start = parser.index;
-  let underscoreError = false;
+  let separatorError = false;
   // Decimal Number
   while (CharTypes[char] & (CharSymbol.Decimal | CharSymbol.Underscore)) {
     // Note: The first char won't be the '_'，Because it's a Identifier in that case.
@@ -30,22 +30,21 @@ const parseDecimalWithSeparator = (
       char = forwardChar(parser);
       // Cannot contain two consecutive underscores
       if (char === Chars.Underscore) {
-        // error
+        throw Error;
       }
-      underscoreError = true;
+      separatorError = true;
       // skip '_'
       value += parser.source.substring(start, indexBeforeUnderscore);
       start = parser.index;
 
       continue;
     }
-    underscoreError = false;
+    separatorError = false;
     char = forwardChar(parser); // skip
   }
 
-  if (underscoreError) {
-    // error
-    return '';
+  if (separatorError) {
+    throw Error;
   }
 
   return value + parser.source.substring(start, parser.index);
@@ -61,16 +60,99 @@ const parseDecimalWithSeparator = (
  */
 export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
   let char = parser.currentChar;
-  let value = '';
+  let value: any = 0;
+  let allowSeparator = false;
+  let digits = 0; // Different types of limiting digits
 
   if (!isFloat) {
-    value = parseDecimalWithSeparator(parser, char);
+    // "0" is a sign, scan for a hexadecimal, binary, octal or implicit octal
+    if (char === Chars.Zero) {
+      char = forwardChar(parser);
+
+      // Hex
+      // It behaves just like parseInt('0x123', 16)
+      if (letterCaseInsensitive(char) === Chars.LowerX) {
+        char = forwardChar(parser);
+
+        while (CharTypes[char] & (CharSymbol.Hex | CharSymbol.Underscore)) {
+          if (char === Chars.Underscore) {
+            if (!allowSeparator) {
+              throw Error;
+            }
+            allowSeparator = false;
+            char = forwardChar(parser);
+            continue;
+          }
+
+          allowSeparator = true;
+          value = value * 0x10 + toHex(char);
+          char = forwardChar(parser);
+          digits++;
+        }
+        if (digits < 1 || !allowSeparator) {
+          throw Error;
+        }
+      }
+
+      // Binary
+      if (letterCaseInsensitive(char) === Chars.LowerB) {
+        char = forwardChar(parser);
+
+        while (
+          CharTypes[char] &
+          (CharSymbol.Binary | CharSymbol.Underscore)
+        ) {
+          if (char === Chars.Underscore) {
+            if (!allowSeparator) {
+              throw Error;
+            }
+            allowSeparator = false;
+            char = forwardChar(parser);
+            continue;
+          }
+
+          allowSeparator = true;
+          value = value * 2 + (char - Chars.Zero);
+          char = forwardChar(parser);
+          digits++;
+        }
+        if (digits < 1 || !allowSeparator) {
+          throw Error;
+        }
+      }
+
+      // Octal
+      if (letterCaseInsensitive(char) === Chars.LowerO) {
+        char = forwardChar(parser);
+
+        while (CharTypes[char] & (CharSymbol.Octal | CharSymbol.Underscore)) {
+          if (char === Chars.Underscore) {
+            if (!allowSeparator) {
+              throw Error;
+            }
+            allowSeparator = false;
+            char = forwardChar(parser);
+            continue;
+          }
+
+          allowSeparator = true;
+          value = value * 8 + (char - Chars.Zero);
+          char = forwardChar(parser);
+          digits++;
+        }
+        if (digits < 1 || !allowSeparator) {
+          throw Error;
+        }
+      }
+    }
+
+    value += parseDecimalWithSeparator(parser, char);
     char = parser.currentChar;
 
     // Consume any decimal dot and fractional component.
     if (char === Chars.Period) {
       if (forwardChar(parser) === Chars.Underscore) {
-        // error
+        throw Error;
       }
       value += '.' + parseDecimalWithSeparator(parser, parser.currentChar);
       char = parser.currentChar;
@@ -82,7 +164,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
     char = parser.currentChar;
     // Syntax Error
     if (char === Chars.LowerN) {
-      // error
+      throw Error;
     }
   }
 

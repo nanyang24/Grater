@@ -172,3 +172,7 @@ export function toHex(code: number): number {
 export function isDecimalDigit(char: number): boolean {
   return char >= Chars.Zero && char <= Chars.Nine; // [0, 9]
 }
+
+export function letterCaseInsensitive(letter: number): number {
+  return letter | 32;
+}
