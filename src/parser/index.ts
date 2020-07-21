@@ -4,6 +4,7 @@ import createParserState from './createParserState';
 // typings
 import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
+import { consumeSemicolon } from './utils';
 import { IParserState } from './type';
 
 // eslint-disable-next-line arrow-body-style
@@ -58,6 +59,7 @@ export function parseExpressionStatement(
   parser: IParserState,
   expression: ESTree.Expression,
 ): ESTree.ExpressionStatement {
+  consumeSemicolon(parser);
   return wrapNode(parser, {
     type: 'ExpressionStatement',
     expression,
@@ -92,6 +94,7 @@ const parseStatementsList = (parser: IParserState) => {
 
   const statements: ESTree.Statement[] = [];
 
+  // Get the machine moving!
   while (parser.token !== Token.EOF) {
     statements.push(parseStatementItem(parser));
   }

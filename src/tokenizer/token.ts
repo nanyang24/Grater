@@ -14,7 +14,7 @@ export enum Token {
 
   Unknown = -1,
   // End-of-file
-  EOF = 0,
+  EOF = 1024,
 
   /* Constants/Bindings */
   Identifier = 1 | IsIdentifier,

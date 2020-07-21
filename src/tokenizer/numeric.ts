@@ -1,6 +1,6 @@
 import { IParserState } from '../parser/type';
 import { Token } from './token';
-import { forwardChar, letterCaseInsensitive, toHex } from './utils';
+import { forwardChar, toHex, letterCaseInsensitive } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
 
 /**
@@ -50,6 +50,18 @@ const parseDecimalWithSeparator = (
   return value + parser.source.substring(start, parser.index);
 };
 
+export const enum NumberKind {
+  Decimal = 1 << 0,
+  Binary = 1 << 1,
+  Octal = 1 << 2,
+  Hex = 1 << 3,
+  ImplicitOctal = 1 << 4,
+  NonOctalDecimal = 1 << 5,
+  Float = 1 << 6,
+  ValidBigIntKind = 1 << 7,
+  DecimalNumberKind = Decimal | NonOctalDecimal,
+}
+
 /*
  * https://tc39.es/ecma262/index.html#prod-NumericLiteral
  * https://tc39.es/ecma262/index.html#sec-additional-syntax-numeric-literals
@@ -63,6 +75,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
   let value: any = 0;
   let allowSeparator = false;
   let digits = 0; // Different types of limiting digits
+  let type = NumberKind.Decimal;
 
   if (!isFloat) {
     // "0" is a sign, scan for a hexadecimal, binary, octal or implicit octal
@@ -94,14 +107,12 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
         }
       }
 
-      // Binary
+      // Binary literals
+      // ES2015 added support for binary literals by using the '0b' prefix followed by a sequence of binary numbers
       if (letterCaseInsensitive(char) === Chars.LowerB) {
         char = forwardChar(parser);
 
-        while (
-          CharTypes[char] &
-          (CharSymbol.Binary | CharSymbol.Underscore)
-        ) {
+        while (CharTypes[char] & (CharSymbol.Binary | CharSymbol.Underscore)) {
           if (char === Chars.Underscore) {
             if (!allowSeparator) {
               throw Error;
@@ -121,7 +132,8 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
         }
       }
 
-      // Octal
+      // Octal literals
+      // ES2015 allows to specify the octal literal by using the prefix '0o' followed by a sequence of octal digits
       if (letterCaseInsensitive(char) === Chars.LowerO) {
         char = forwardChar(parser);
 
@@ -144,18 +156,36 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
           throw Error;
         }
       }
+
+      // 1. Implicit Octal Literal
+      //     in ES5, to represent an octal literal, use the zero prefix (0) followed by a sequence of octal digits
+      //     '0123' --> '83'
+      // 2. If the octal literal contains a number that is out of range,
+      //     JavaScript ignores the leading 0 and treats the octal literal as a decimal
+      //     '098' --> '98'
+      if (CharTypes[char] & CharSymbol.Octal) {
+        // if strict, error
+        type = NumberKind.ImplicitOctal;
+        while (CharTypes[char] & CharSymbol.Octal) {
+          value = value * 8 + (char - Chars.Zero);
+          char = forwardChar(parser);
+          digits++;
+        }
+      }
     }
 
     value += parseDecimalWithSeparator(parser, char);
     char = parser.currentChar;
 
-    // Consume any decimal dot and fractional component.
-    if (char === Chars.Period) {
-      if (forwardChar(parser) === Chars.Underscore) {
-        throw Error;
+    // Only decimal Numbers are allowed to have decimals
+    if (type & NumberKind.DecimalNumberKind) {
+      if (char === Chars.Period) {
+        if (forwardChar(parser) === Chars.Underscore) {
+          throw Error;
+        }
+        value += '.' + parseDecimalWithSeparator(parser, parser.currentChar);
+        char = parser.currentChar;
       }
-      value += '.' + parseDecimalWithSeparator(parser, parser.currentChar);
-      char = parser.currentChar;
     }
   }
 
