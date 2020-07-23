@@ -48,6 +48,11 @@ export function scan(parser: IParserState): Token {
           return scanNumber(parser);
         }
 
+        //  Keywords
+        case Token.Keyword: {
+          return scanIdentifier(parser);
+        }
+
         //  `A`...`Z`, `_internal`, `$value`
         case Token.Identifier: {
           return scanIdentifier(parser);
