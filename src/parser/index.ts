@@ -19,6 +19,19 @@ const parseThisExpression = (parser: IParserState) => {
   });
 };
 
+const parsePrimitiveLiteral = (parser: IParserState) => {
+  const { tokenValue } = parser;
+
+  // Maybe a little mental burden
+  const value = JSON.parse(tokenValue);
+
+  nextToken(parser);
+  return wrapNode(parser, {
+    type: 'Literal',
+    value,
+  });
+};
+
 const parseLiteral = (parser: IParserState): ESTree.Literal => {
   const { tokenValue } = parser;
 
@@ -50,6 +63,23 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
 const parsePrimaryExpression = (
   parser: IParserState,
 ): ESTree.Statement | ESTree.Expression => {
+  /**
+   * PrimaryExpression[Yield, Await]:
+   *   this
+   *   IdentifierReference[?Yield, ?Await]
+   *   Literal
+   *   ArrayLiteral[?Yield, ?Await]
+   *   ObjectLiteral[?Yield, ?Await]
+   *   FunctionExpression
+   *   ClassExpression[?Yield, ?Await]
+   *   GeneratorExpression
+   *   AsyncFunctionExpression
+   *   AsyncGeneratorExpression
+   *   RegularExpressionLiteral
+   *   TemplateLiteral[?Yield, ?Await, ~Tagged]
+   *   CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
+   */
+
   if ((parser.token & Token.IsIdentifier) === Token.IsIdentifier) {
     return parseIdentifier(parser);
   }
@@ -61,6 +91,10 @@ const parsePrimaryExpression = (
   switch (parser.token) {
     case Token.ThisKeyword:
       return parseThisExpression(parser);
+    case Token.TrueKeyword:
+    case Token.FalseKeyword:
+    case Token.NullKeyword:
+      return parsePrimitiveLiteral(parser);
   }
 
   return '';
