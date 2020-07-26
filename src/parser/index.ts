@@ -4,7 +4,7 @@ import createParserState from './createParserState';
 // typings
 import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
-import { consumeSemicolon } from './utils';
+import { consumeSemicolon, consumeOpt } from './utils';
 import { IParserState } from './type';
 
 // eslint-disable-next-line arrow-body-style
@@ -100,16 +100,16 @@ const parsePrimaryExpression = (
   return '';
 };
 
-export function parseExpressionStatement(
+const parseExpressionStatement = (
   parser: IParserState,
   expression: ESTree.Expression,
-): ESTree.ExpressionStatement {
+): ESTree.ExpressionStatement => {
   consumeSemicolon(parser);
   return wrapNode(parser, {
     type: 'ExpressionStatement',
     expression,
   });
-}
+};
 
 /**
  * https://tc39.es/ecma262/index.html#sec-ecmascript-language-expressions
@@ -120,9 +120,106 @@ const parseExpression = (parser: IParserState): ESTree.ExpressionStatement => {
   return parseExpressionStatement(parser, expression);
 };
 
-// eslint-disable-next-line arrow-body-style
+const parseAndClassifyIdentifier = (
+  parser: IParserState,
+): ESTree.Identifier => {
+  nextToken(parser);
+
+  return wrapNode(parser, {
+    type: 'Identifier',
+    name: parser.tokenValue,
+  });
+};
+
+const parseBindingPattern = (parser: IParserState) => {
+  if (parser.token & Token.IsIdentifier) {
+    return parseAndClassifyIdentifier(parser);
+  }
+  return ('' as unknown) as ESTree.Identifier;
+};
+
+const parseVariableDeclaration = (
+  parser: IParserState,
+): ESTree.VariableDeclarator => {
+  let init:
+    | ESTree.Expression
+    | ESTree.BindingPattern
+    | ESTree.Identifier
+    | null = null;
+
+  const id = parseBindingPattern(parser);
+
+  if (parser.token === Token.Assign) {
+    nextToken(parser);
+    init = parseExpression(parser);
+  }
+
+  return wrapNode(parser, {
+    type: 'VariableDeclarator',
+    id,
+    init,
+  });
+};
+
+const parseVariableDeclarationList = (parser: IParserState) => {
+  let bindingCount = 1;
+  const list: ESTree.VariableDeclarator[] = [parseVariableDeclaration(parser)];
+  while (consumeOpt(parser, Token.Comma)) {
+    bindingCount++;
+    list.push(parseVariableDeclaration(parser));
+  }
+
+  if (bindingCount) {
+  }
+
+  return list;
+};
+
+// https://tc39.es/ecma262/#prod-VariableDeclaration
+const parseVariableStatement = (parser: IParserState): ESTree.VariableDeclaration => {
+  nextToken(parser);
+
+  const declarations = parseVariableDeclarationList(parser);
+
+  consumeSemicolon(parser);
+
+  return wrapNode(parser, {
+    type: 'VariableDeclaration',
+    kind: 'var',
+    declarations,
+  });
+};
+
+/**
+ * https://tc39.es/ecma262/#sec-ecmascript-language-statements-and-declarations
+ * */
 const parseStatement = (parser: IParserState): ESTree.Statement => {
-  return parseExpression(parser);
+  // Statement
+  //   BlockStatement
+  //   VariableStatement
+  //   EmptyStatement
+  //   ExpressionStatement
+  //   IfStatement
+  //   BreakableStatement
+  //      IterationStatement
+  //      SwitchStatement
+  //   ContinueStatement
+  //   BreakStatement
+  //   [+Return]ReturnStatement
+  //   WithStatement
+  //   LabelledStatement
+  //   ThrowStatement
+  //   TryStatement
+  //   DebuggerStatement
+
+  switch (parser.token) {
+    case Token.VarKeyword: {
+      return parseVariableStatement(parser);
+    }
+    default: {
+      return parseExpression(parser);
+    }
+  }
 };
 
 const parseStatementItem = (parser: IParserState): ESTree.Statement => {

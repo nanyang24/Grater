@@ -35,12 +35,31 @@ export interface Program extends Node {
  * Patterns
  * Destructuring binding and assignment are not part of ES5
  */
-export interface Pattern extends Node {}
+export type Pattern =
+  | Identifier
+  | ObjectPattern
+  | ArrayPattern
+  | AssignmentPattern
+  | MemberExpression;
+
+export type BindingPattern = ArrayPattern | ObjectPattern | Identifier;
+
+export interface ArrayPattern extends Node {
+  type: 'ArrayPattern';
+  elements: Expression[];
+}
+
+export interface ObjectPattern extends Node {
+  type: 'ObjectPattern';
+  properties: ObjectLiteralElementLike[];
+}
+
+export type ObjectLiteralElementLike = Property;
 
 /*
  * Identifier
  */
-export interface Identifier extends Expression, Pattern {
+export interface Identifier extends Expression {
   type: 'Identifier';
   name: string;
 }
@@ -68,7 +87,7 @@ export interface Function extends Node {
 export type Statement =
   | BlockStatement
   | ExpressionStatement
-  | FunctionBody
+  // | FunctionBody
   | EmptyStatement
   | DebuggerStatement
   | WithStatement
@@ -343,6 +362,11 @@ export interface AssignmentExpression extends Node {
   operator: AssignmentOperator;
   left: Expression;
   right: Expression;
+}
+export interface AssignmentPattern extends Node {
+  type: 'AssignmentPattern';
+  left: BindingPattern | Identifier;
+  right?: Expression;
 }
 
 // An assignment operator token.
