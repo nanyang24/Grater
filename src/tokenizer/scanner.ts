@@ -20,7 +20,9 @@ export function scan(parser: IParserState): Token {
       const token = TokenPickUpFromASCII[char];
 
       switch (token) {
-        case Token.Unknown: {
+        case Token.Unknown:
+        case Token.Semicolon:
+        case Token.Comma: {
           forwardChar(parser);
           return token;
         }
