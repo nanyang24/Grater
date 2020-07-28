@@ -176,7 +176,9 @@ const parseVariableDeclarationList = (parser: IParserState) => {
 };
 
 // https://tc39.es/ecma262/#prod-VariableDeclaration
-const parseVariableStatement = (parser: IParserState): ESTree.VariableDeclaration => {
+const parseVariableStatement = (
+  parser: IParserState,
+): ESTree.VariableDeclaration => {
   nextToken(parser);
 
   const declarations = parseVariableDeclarationList(parser);
@@ -188,6 +190,17 @@ const parseVariableStatement = (parser: IParserState): ESTree.VariableDeclaratio
     kind: 'var',
     declarations,
   });
+};
+
+const parseExpressionStatements = (parser: IParserState) => {
+  const { token } = parser;
+  let expr: ESTree.Expression;
+
+  switch (token) {
+    default:
+      expr = parsePrimaryExpression(parser);
+  }
+  return parseExpressionStatement(parser, expr);
 };
 
 /**
@@ -217,7 +230,7 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
       return parseVariableStatement(parser);
     }
     default: {
-      return parseExpression(parser);
+      return parseExpressionStatements(parser);
     }
   }
 };
