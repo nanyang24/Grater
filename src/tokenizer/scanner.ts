@@ -4,6 +4,7 @@ import { scanString } from './string';
 import { scanNumber } from './numeric';
 import { Token } from './token';
 import { TokenPickUpFromASCII, forwardChar, isDecimalDigit } from './utils';
+import { Chars } from './charClassifier';
 
 export function scan(parser: IParserState): Token {
   // const { source } = parser;
@@ -32,6 +33,32 @@ export function scan(parser: IParserState): Token {
           forwardChar(parser);
           break;
         }
+
+        // `=`, `==`, `===`, `=>`
+        case Token.Assign: {
+          forwardChar(parser);
+
+          if (parser.index >= parser.end) return Token.Assign;
+          const { currentChar } = parser;
+
+          // `===`, `==`
+          if (currentChar === Chars.EqualSign) {
+            if (forwardChar(parser) === Chars.EqualSign) {
+              forwardChar(parser);
+              return Token.StrictEqual;
+            }
+            return Token.LooseEqual;
+          }
+
+          // `=>`
+          if (currentChar === Chars.GreaterThan) {
+            forwardChar(parser);
+            return Token.Arrow;
+          }
+
+          return Token.Assign;
+        }
+
         // `'string'`, `"string"`
         case Token.StringLiteral: {
           return scanString(parser, char);

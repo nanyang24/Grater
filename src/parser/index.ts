@@ -111,13 +111,18 @@ const parseExpressionStatement = (
   });
 };
 
+const parseAssignmentExpression = (
+  parser: IParserState,
+  expression: ESTree.Expression,
+): ESTree.ExpressionStatement => expression;
+
 /**
  * https://tc39.es/ecma262/index.html#sec-ecmascript-language-expressions
  */
 const parseExpression = (parser: IParserState): ESTree.ExpressionStatement => {
   const expression: ESTree.Expression = parsePrimaryExpression(parser);
 
-  return parseExpressionStatement(parser, expression);
+  return parseAssignmentExpression(parser, expression);
 };
 
 const parseAndClassifyIdentifier = (
@@ -275,3 +280,58 @@ const parserMachine = (source: string): ESTree.Program => {
 };
 
 export { parserMachine };
+
+/**
+
+`const ny = 24`
+
+            Script
+               |
+          ScriptBody
+               |
+         StatementList
+               |
+       StatementListItem
+               |
+          Declaration
+               |
+      LexicalDeclaration
+     /         |        \
+LetOrConst BindingList  ';'
+    |           |
+ 'const'   LexicalBinding
+             /          \
+     BindingIdentifier  Initializer
+            |                |
+         Identifier    AssignmentExpression
+            |                  |
+       IdentifierName         ...
+            |                  |
+          'ny'               '24'
+
+`ny = 24`
+                     Statement
+                         |
+               ExpressionStatement
+                     /        \
+                   Expression ';'
+                        |
+              AssignmentExpression
+             /          |         \
+LeftHandSideExpression '=' AssignmentExpression
+         |                         |
+    NewExpression                ...
+         |                         |
+   MemberExpression              '24'
+         |
+   PrimaryExpression
+         |
+IdentifierReference
+         |
+     Identifier
+         |
+   IdentifierName
+         |
+       'ny'
+
+*/
