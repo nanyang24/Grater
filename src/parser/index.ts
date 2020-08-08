@@ -54,15 +54,78 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
+const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
+  nextToken(parser);
+
+  const elements: (
+    | ESTree.Identifier
+    | ESTree.AssignmentExpression
+    | null
+  )[] = [];
+
+  while (parser.token !== Token.RightBracket) {
+    if (consumeOpt(parser, Token.Comma)) {
+      elements.push(null);
+      continue;
+    }
+
+    let node: any;
+    if (parser.token & Token.IsIdentifier) {
+      // eslint-disable-next-line no-use-before-define
+      node = parsePrimaryExpression(parser);
+    }
+
+    elements.push(node);
+
+    if (consumeOpt(parser, Token.Comma)) {
+      if (parser.token === Token.RightBracket) break;
+    } else break;
+  }
+
+  console.log('elements', elements);
+
+  consumeOpt(parser, Token.RightBracket);
+
+  return wrapNode(parser, {
+    type: 'ArrayExpression',
+    elements,
+  });
+};
+
+// eslint-disable-next-line arrow-body-style
+const parseArrayLiteral = (parser: IParserState) => {
+  /**
+    ArrayLiteral[Yield, Await] :
+      [ Elisionopt ]
+      [ ElementList[?Yield, ?Await] ]
+      [ ElementList[?Yield, ?Await] , Elisionopt ]
+
+    ElementList[Yield, Await] :
+      Elisionopt AssignmentExpression[+In, ?Yield, ?Await]
+      Elisionopt SpreadElement[?Yield, ?Await]
+      ElementList[?Yield, ?Await] , Elisionopt AssignmentExpression[+In, ?Yield, ?Await]
+      ElementList[?Yield, ?Await] , Elisionopt SpreadElement[?Yield, ?Await]
+
+    Elision :
+      ,
+      Elision ,
+
+    SpreadElement[Yield, Await] :
+      ... AssignmentExpression[+In, ?Yield, ?Await]
+  */
+
+  return parseArrayExpression(parser);
+};
+
 /**
  * https://tc39.es/ecma262/index.html#sec-primary-expression
  *
  * @param {IParserState} parser
  * @returns {(ESTree.Statement | ESTree.Expression)}
  */
-const parsePrimaryExpression = (
+function parsePrimaryExpression(
   parser: IParserState,
-): ESTree.Statement | ESTree.Expression => {
+): ESTree.Statement | ESTree.Expression {
   /**
    * PrimaryExpression[Yield, Await]:
    *   this
@@ -95,10 +158,13 @@ const parsePrimaryExpression = (
     case Token.FalseKeyword:
     case Token.NullKeyword:
       return parsePrimitiveLiteral(parser);
+    // Array Initializer
+    case Token.LeftBracket:
+      return parseArrayLiteral(parser);
   }
 
   return '';
-};
+}
 
 const parseExpressionStatement = (
   parser: IParserState,

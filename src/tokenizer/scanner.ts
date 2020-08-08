@@ -23,7 +23,9 @@ export function scan(parser: IParserState): Token {
       switch (token) {
         case Token.Unknown:
         case Token.Semicolon:
-        case Token.Comma: {
+        case Token.Comma:
+        case Token.LeftBracket:
+        case Token.RightBracket: {
           forwardChar(parser);
           return token;
         }
