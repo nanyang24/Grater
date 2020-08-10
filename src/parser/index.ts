@@ -54,6 +54,9 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+const parseObjectLiteral = () => {};
+
 const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
   nextToken(parser);
 
@@ -73,6 +76,13 @@ const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
     if (parser.token & Token.IsIdentifier) {
       // eslint-disable-next-line no-use-before-define
       node = parsePrimaryExpression(parser);
+    } else if (parser.token & Token.IsPatternStart) {
+      const parseWay =
+        parser.token === Token.LeftBracket
+          ? parseArrayExpression
+          : parseObjectLiteral;
+
+      node = parseWay(parser);
     }
 
     elements.push(node);
@@ -81,8 +91,6 @@ const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
       if (parser.token === Token.RightBracket) break;
     } else break;
   }
-
-  console.log('elements', elements);
 
   consumeOpt(parser, Token.RightBracket);
 

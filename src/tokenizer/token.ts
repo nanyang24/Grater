@@ -9,6 +9,7 @@ export enum Token {
 
   IsIdentifier = 1 << 11,
   IsStringOrNumber = 1 << 12,
+  IsPatternStart = 1 << 13,
 
   Keyword = 1 << 12,
 
@@ -28,14 +29,14 @@ export enum Token {
   /* Punctuators */
   Arrow = 10,
   LeftParen = 11,
-  LeftBrace = 12,
+  LeftBrace = 12 | IsPatternStart, // {
   Period = 13,
   Ellipsis = 14,
   RightBrace = 15,
   RightParen = 16,
   Semicolon = 17,
   Comma = 18,
-  LeftBracket = 19,
+  LeftBracket = 19 | IsPatternStart, // [
   RightBracket = 20,
   Colon = 21,
   QuestionMark = 22,
