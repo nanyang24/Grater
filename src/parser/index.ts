@@ -54,8 +54,7 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-const parseObjectLiteral = () => {};
+// const parseObjectLiteral = () => {};
 
 const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
   nextToken(parser);
@@ -67,22 +66,17 @@ const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
   )[] = [];
 
   while (parser.token !== Token.RightBracket) {
+    let node: any;
+
     if (consumeOpt(parser, Token.Comma)) {
       elements.push(null);
       continue;
-    }
-
-    let node: any;
-    if (parser.token & Token.IsIdentifier) {
-      // eslint-disable-next-line no-use-before-define
-      node = parsePrimaryExpression(parser);
-    } else if (parser.token & Token.IsPatternStart) {
-      const parseWay =
-        parser.token === Token.LeftBracket
-          ? parseArrayExpression
-          : parseObjectLiteral;
-
-      node = parseWay(parser);
+    } else {
+      // TODO: Spread
+      if (parser.token === Token.Ellipsis) {
+      } else {
+        node = parseExpression(parser);
+      }
     }
 
     elements.push(node);
@@ -131,9 +125,9 @@ const parseArrayLiteral = (parser: IParserState) => {
  * @param {IParserState} parser
  * @returns {(ESTree.Statement | ESTree.Expression)}
  */
-function parsePrimaryExpression(
+const parsePrimaryExpression = (
   parser: IParserState,
-): ESTree.Statement | ESTree.Expression {
+): ESTree.Statement | ESTree.Expression => {
   /**
    * PrimaryExpression[Yield, Await]:
    *   this
@@ -172,7 +166,7 @@ function parsePrimaryExpression(
   }
 
   return '';
-}
+};
 
 const parseExpressionStatement = (
   parser: IParserState,
@@ -191,10 +185,42 @@ const parseAssignmentExpression = (
 ): ESTree.ExpressionStatement => expression;
 
 /**
+ * https://tc39.es/ecma262/#prod-MemberExpression
+ *
+ * @param {IParserState} parser
+ * @param {ESTree.Expression} expr
+ * @returns {ESTree.Expression}
+ */
+const parseMemberExpression = (
+  parser: IParserState,
+  expr: ESTree.Expression,
+// eslint-disable-next-line arrow-body-style
+): ESTree.Expression => {
+  // TODO
+
+  return expr;
+};
+
+/**
+ * https://tc39.es/ecma262/#sec-left-hand-side-expressions
+ *
+ * @param {IParserState} parser
+ * @returns {ESTree.Expression}
+ */
+const parseLeftHandSideExpression = (
+  parser: IParserState,
+): ESTree.Expression => {
+  let expr: ESTree.LeftHandSideExpression = parsePrimaryExpression(parser);
+
+  expr = parseMemberExpression(parser, expr);
+  return expr;
+};
+
+/**
  * https://tc39.es/ecma262/index.html#sec-ecmascript-language-expressions
  */
 const parseExpression = (parser: IParserState): ESTree.ExpressionStatement => {
-  const expression: ESTree.Expression = parsePrimaryExpression(parser);
+  const expression: ESTree.Expression = parseLeftHandSideExpression(parser);
 
   return parseAssignmentExpression(parser, expression);
 };

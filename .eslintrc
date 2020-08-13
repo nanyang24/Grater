@@ -43,6 +43,8 @@
     "no-continue": 0,
     "no-multi-str": 0,
     "prefer-template": 0,
+    "no-lonely-if": 0,
+    "no-use-before-define": ["error", { "variables": false }],
     "max-len": [
       "error",
       {

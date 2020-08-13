@@ -269,6 +269,19 @@ export interface VariableDeclarator extends Node {
  */
 export type Expression = any;
 
+export type LeftHandSideExpression =
+  | AssignmentExpression
+  | ConditionalExpression
+  | MemberExpression
+  | BinaryExpression
+  | CallExpression
+  | UnaryExpression
+  | NewExpression
+  | ThisExpression
+  | FunctionExpression
+  | FunctionBody
+  | ImportMeta;
+
 export interface ThisExpression extends Node {
   type: 'ThisExpression';
 }

@@ -97,7 +97,7 @@ export enum Token {
 
   /* Variable declaration */
   VarKeyword = 71,
-  LetKeyword = 72,
+  LetKeyword = 72 | IsIdentifier,
   ConstKeyword = 73,
 
   /* Other reserved words */
@@ -134,12 +134,12 @@ export enum Token {
   ProtectedKeyword = 103,
   PublicKeyword = 104,
   StaticKeyword = 105,
-  YieldKeyword = 106,
+  YieldKeyword = 106 | IsIdentifier,
 
   /* Contextual keywords */
   AsKeyword = 107,
   AsyncKeyword = 108,
-  AwaitKeyword = 109,
+  AwaitKeyword = 109 | IsIdentifier,
   ConstructorKeyword = 110,
   GetKeyword = 111,
   SetKeyword = 112,
@@ -152,7 +152,7 @@ export enum Token {
 
   EscapedReserved = 118,
   EscapedFutureReserved = 119,
-  AnyIdentifier = 120,
+  AnyIdentifier = 120 | IsIdentifier,
 
   WhiteSpace = 200,
   LineFeed = 201,
@@ -161,8 +161,8 @@ export enum Token {
   EscapedIdentifier = 204,
   Template = 205,
   Decorator = 206,
-  Target = 207,
-  Meta = 208,
+  Target = 207 | IsIdentifier,
+  Meta = 208 | IsIdentifier,
 }
 
 // Reserved keywords of ECMAScript
