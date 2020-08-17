@@ -4,6 +4,7 @@ import createParserState from './createParserState';
 // typings
 import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
+import { KeywordTokenTable } from '../tokenizer/utils';
 import { consumeSemicolon, consumeOpt } from './utils';
 import { IParserState } from './type';
 
@@ -182,7 +183,23 @@ const parseExpressionStatement = (
 const parseAssignmentExpression = (
   parser: IParserState,
   expression: ESTree.Expression,
-): ESTree.ExpressionStatement => expression;
+): ESTree.AssignmentExpression | ESTree.Expression => {
+  if ((parser.token & Token.IsAssignPart) === Token.IsAssignPart) {
+    const operator = KeywordTokenTable[parser.token & Token.Musk];
+    nextToken(parser);
+    const right = parseExpression(parser);
+
+    // TODO: AssignmentPattern
+    return wrapNode(parser, {
+      type: 'AssignmentExpression',
+      left: expression,
+      operator,
+      right,
+    });
+  }
+
+  return expression;
+};
 
 /**
  * https://tc39.es/ecma262/#prod-MemberExpression
@@ -194,7 +211,7 @@ const parseAssignmentExpression = (
 const parseMemberExpression = (
   parser: IParserState,
   expr: ESTree.Expression,
-// eslint-disable-next-line arrow-body-style
+  // eslint-disable-next-line arrow-body-style
 ): ESTree.Expression => {
   // TODO
 

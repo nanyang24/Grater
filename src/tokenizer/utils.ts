@@ -134,6 +134,170 @@ export const TokenPickUpFromASCII = [
   /* 127 - Delete             */ Token.Unknown,
 ];
 
+// map from tokenizer-Token
+export const KeywordTokenTable = [
+  'end of source',
+
+  /* Constants/Bindings */
+  'identifier',
+  'number',
+  'string',
+  'regular expression',
+  'false',
+  'true',
+  'null',
+
+  /* Template nodes */
+  'template continuation',
+  'template tail',
+
+  /* Punctuators */
+  '=>',
+  '(',
+  '{',
+  '.',
+  '...',
+  '}',
+  ')',
+  ';',
+  ',',
+  '[',
+  ']',
+  ':',
+  '?',
+  "'",
+  '"',
+  '</',
+  '/>',
+
+  /* Update operators */
+  '++',
+  '--',
+
+  /* Assign operators */
+  '=',
+  '<<=',
+  '>>=',
+  '>>>=',
+  '**=',
+  '+=',
+  '-=',
+  '*=',
+  '/=',
+  '%=',
+  '^=',
+  '|=',
+  '&=',
+
+  /* Unary/binary operators */
+  'typeof',
+  'delete',
+  'void',
+  '!',
+  '~',
+  '+',
+  '-',
+  'in',
+  'instanceof',
+  '*',
+  '%',
+  '/',
+  '**',
+  '&&',
+  '||',
+  '===',
+  '!==',
+  '==',
+  '!=',
+  '<=',
+  '>=',
+  '<',
+  '>',
+  '<<',
+  '>>',
+  '>>>',
+  '&',
+  '|',
+  '^',
+
+  /* Variable declaration kinds */
+  'var',
+  'let',
+  'const',
+
+  /* Other reserved words */
+  'break',
+  'case',
+  'catch',
+  'class',
+  'continue',
+  'debugger',
+  'default',
+  'do',
+  'else',
+  'export',
+  'extends',
+  'finally',
+  'for',
+  'function',
+  'if',
+  'import',
+  'new',
+  'return',
+  'super',
+  'switch',
+  'this',
+  'throw',
+  'try',
+  'while',
+  'with',
+
+  /* Strict mode reserved words */
+  'implements',
+  'interface',
+  'package',
+  'private',
+  'protected',
+  'public',
+  'static',
+  'yield',
+
+  /* Contextual keywords */
+  'as',
+  'async',
+  'await',
+  'constructor',
+  'get',
+  'set',
+  'from',
+  'of',
+
+  /* Others */
+  'enum',
+  'eval',
+  'arguments',
+  'escaped keyword',
+  'escaped future reserved keyword',
+  'reserved if strict',
+  '#',
+
+  'BigIntLiteral',
+  '??',
+  '?.',
+  'WhiteSpace',
+  'Illegal',
+  'LineTerminator',
+  'PrivateField',
+
+  'Template',
+  '@',
+  'target',
+  'meta',
+  'LineFeed',
+  'Escaped',
+  'JSXText',
+];
+
 export /**
  * @param {IParserState} parser
  * @returns {number}

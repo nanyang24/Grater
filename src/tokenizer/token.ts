@@ -10,6 +10,7 @@ export enum Token {
   IsIdentifier = 1 << 11,
   IsStringOrNumber = 1 << 12,
   IsPatternStart = 1 << 13,
+  IsAssignPart = 1 << 14,
 
   Keyword = 1 << 12,
 
@@ -50,19 +51,19 @@ export enum Token {
   Decrement = 28,
 
   /* Assign operators */
-  Assign = 29,
-  ShiftLeftAssign = 30,
-  ShiftRightAssign = 31,
-  LogicalShiftRightAssign = 32,
-  ExponentiateAssign = 33,
-  AddAssign = 34,
-  SubtractAssign = 35,
-  MultiplyAssign = 36,
-  DivideAssign = 37,
-  ModuloAssign = 38,
-  BitwiseXorAssign = 39,
-  BitwiseOrAssign = 40,
-  BitwiseAndAssign = 41,
+  Assign = 29 | IsAssignPart,
+  ShiftLeftAssign = 30 | IsAssignPart,
+  ShiftRightAssign = 31 | IsAssignPart,
+  LogicalShiftRightAssign = 32 | IsAssignPart,
+  ExponentiateAssign = 33 | IsAssignPart,
+  AddAssign = 34 | IsAssignPart,
+  SubtractAssign = 35 | IsAssignPart,
+  MultiplyAssign = 36 | IsAssignPart,
+  DivideAssign = 37 | IsAssignPart,
+  ModuloAssign = 38 | IsAssignPart,
+  BitwiseXorAssign = 39 | IsAssignPart,
+  BitwiseOrAssign = 40 | IsAssignPart,
+  BitwiseAndAssign = 41 | IsAssignPart,
 
   /* Unary/binary operators */
   TypeofKeyword = 42,
