@@ -57,6 +57,26 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
 
 // const parseObjectLiteral = () => {};
 
+export function parseAssignmentElement(
+  parser: IParserState,
+  elements: any[],
+): any {
+  const operator = KeywordTokenTable[parser.token & Token.Musk];
+  nextToken(parser);
+  const left = wrapNode(parser, {
+    type: 'ArrayPattern',
+    elements,
+  });
+  const right = parseExpression(parser);
+
+  return wrapNode(parser, {
+    type: 'AssignmentExpression',
+    left,
+    operator,
+    right,
+  });
+}
+
 const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
   nextToken(parser);
 
@@ -88,6 +108,14 @@ const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
   }
 
   consumeOpt(parser, Token.RightBracket);
+
+  if (parser.token & Token.IsAssignPart) {
+    if (parser.token !== Token.Assign) {
+      throw Error;
+    }
+
+    return parseAssignmentElement(parser, elements);
+  }
 
   return wrapNode(parser, {
     type: 'ArrayExpression',
@@ -184,7 +212,7 @@ const parseAssignmentExpression = (
   parser: IParserState,
   expression: ESTree.Expression,
 ): ESTree.AssignmentExpression | ESTree.Expression => {
-  if ((parser.token & Token.IsAssignPart) === Token.IsAssignPart) {
+  if (parser.token & Token.IsAssignPart) {
     const operator = KeywordTokenTable[parser.token & Token.Musk];
     nextToken(parser);
     const right = parseExpression(parser);
