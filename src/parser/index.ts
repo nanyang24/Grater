@@ -55,7 +55,51 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
-// const parseObjectLiteral = () => {};
+const parseObjectExpression = (parser: IParserState) => {
+  nextToken(parser);
+
+  const properties: ESTree.Property[] = [];
+
+  while (parser.token !== Token.RightBrace) {
+    let key;
+    let value;
+
+    if (parser.token & (Token.IsIdentifier | Token.Keyword)) {
+      key = parseIdentifier(parser);
+      if (consumeOpt(parser, Token.Colon)) {
+        value = parsePrimaryExpression(parser);
+      }
+    }
+
+    properties.push(
+      wrapNode(parser, {
+        type: 'Property',
+        key,
+        value,
+        kind: 'init',
+        computed: false,
+        method: false,
+        shorthand: false,
+      }),
+    );
+
+    if (parser.token !== Token.Comma) break;
+
+    nextToken(parser);
+  }
+
+  consumeOpt(parser, Token.RightBrace);
+
+  return wrapNode(parser, {
+    type: 'ObjectExpression',
+    properties,
+  });
+};
+
+// eslint-disable-next-line arrow-body-style
+const parseObjectLiteral = (parser: IParserState) => {
+  return parseObjectExpression(parser);
+};
 
 export function parseAssignmentElement(
   parser: IParserState,
@@ -192,6 +236,10 @@ const parsePrimaryExpression = (
     // Array Initializer
     case Token.LeftBracket:
       return parseArrayLiteral(parser);
+
+    case Token.LeftBrace: {
+      return parseObjectLiteral(parser);
+    }
   }
 
   return '';

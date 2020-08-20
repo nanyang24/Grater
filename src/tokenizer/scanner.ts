@@ -25,7 +25,12 @@ export function scan(parser: IParserState): Token {
         case Token.Semicolon:
         case Token.Comma:
         case Token.LeftBracket:
-        case Token.RightBracket: {
+        case Token.RightBracket:
+        case Token.LeftBrace:
+        case Token.RightBrace:
+        case Token.LeftParen:
+        case Token.RightParen:
+        case Token.Colon: {
           forwardChar(parser);
           return token;
         }
