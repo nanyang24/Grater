@@ -14,3 +14,17 @@ export function consumeSemicolon(parser: IParserState): void {
   }
   consumeOpt(parser, Token.Semicolon);
 }
+
+export function mapToAssignment(node: any): void {
+  switch (node.type) {
+    case 'ArrayExpression': {
+      node.type = 'ArrayPattern';
+      const { elements } = node;
+      let i = elements.length;
+      while (i--) {
+        mapToAssignment(elements[i]);
+      }
+      return undefined;
+    }
+  }
+}

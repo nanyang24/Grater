@@ -5,7 +5,7 @@ import createParserState from './createParserState';
 import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
 import { KeywordTokenTable } from '../tokenizer/utils';
-import { consumeSemicolon, consumeOpt } from './utils';
+import { consumeSemicolon, consumeOpt, mapToAssignment } from './utils';
 import { IParserState } from './type';
 
 // eslint-disable-next-line arrow-body-style
@@ -55,7 +55,9 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
-const parseObjectExpression = (parser: IParserState) => {
+const parseObjectExpression = (
+  parser: IParserState,
+): ESTree.ObjectExpression => {
   nextToken(parser);
 
   const properties: ESTree.Property[] = [];
@@ -90,10 +92,19 @@ const parseObjectExpression = (parser: IParserState) => {
 
   consumeOpt(parser, Token.RightBrace);
 
-  return wrapNode(parser, {
+  const node = wrapNode(parser, {
     type: 'ObjectExpression',
     properties,
-  });
+  }) as ESTree.ObjectExpression;
+
+  if (parser.token & Token.IsAssignPart) {
+    if (parser.token !== Token.Assign) {
+      throw Error;
+    }
+
+    return parseAssignmentElement(parser, node);
+  }
+  return node;
 };
 
 // eslint-disable-next-line arrow-body-style
@@ -101,16 +112,14 @@ const parseObjectLiteral = (parser: IParserState) => {
   return parseObjectExpression(parser);
 };
 
-export function parseAssignmentElement(
+export const parseAssignmentElement = (
   parser: IParserState,
-  elements: any[],
-): any {
+  left: ESTree.ArrayExpression | ESTree.ObjectExpression,
+): any => {
   const operator = KeywordTokenTable[parser.token & Token.Musk];
   nextToken(parser);
-  const left = wrapNode(parser, {
-    type: 'ArrayPattern',
-    elements,
-  });
+
+  mapToAssignment(left);
   const right = parseExpression(parser);
 
   return wrapNode(parser, {
@@ -119,7 +128,7 @@ export function parseAssignmentElement(
     operator,
     right,
   });
-}
+};
 
 const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
   nextToken(parser);
@@ -153,18 +162,20 @@ const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
 
   consumeOpt(parser, Token.RightBracket);
 
+  const node = wrapNode(parser, {
+    type: 'ArrayExpression',
+    elements,
+  }) as ESTree.ArrayExpression;
+
   if (parser.token & Token.IsAssignPart) {
     if (parser.token !== Token.Assign) {
       throw Error;
     }
 
-    return parseAssignmentElement(parser, elements);
+    return parseAssignmentElement(parser, node);
   }
 
-  return wrapNode(parser, {
-    type: 'ArrayExpression',
-    elements,
-  });
+  return node;
 };
 
 // eslint-disable-next-line arrow-body-style
