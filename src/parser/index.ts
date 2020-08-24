@@ -6,7 +6,7 @@ import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
 import { KeywordTokenTable } from '../tokenizer/utils';
 import { consumeSemicolon, consumeOpt, mapToAssignment } from './utils';
-import { IParserState } from './type';
+import { IParserState, PropertyKind, PropertyKindMap } from './type';
 
 // eslint-disable-next-line arrow-body-style
 const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
@@ -55,6 +55,35 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
+const parsePropertyDefinition = (parser: IParserState): ESTree.Property => {
+  let key;
+  let value;
+  let kind = PropertyKind.None;
+
+  // LiteralPropertyName
+  if (parser.token & (Token.IsIdentifier | Token.Keyword)) {
+    key = parseIdentifier(parser);
+    kind |= PropertyKind.Generator;
+
+    if (consumeOpt(parser, Token.Colon)) {
+      value = parsePrimaryExpression(parser);
+
+      return wrapNode(parser, {
+        type: 'Property',
+        key,
+        value,
+        kind: PropertyKindMap[kind],
+        computed: false,
+        method: false,
+        shorthand: false,
+      }) as ESTree.Property;
+    }
+  }
+
+  // FIXME: ugly
+  return {} as ESTree.Property;
+};
+
 const parseObjectExpression = (
   parser: IParserState,
 ): ESTree.ObjectExpression => {
@@ -63,27 +92,7 @@ const parseObjectExpression = (
   const properties: ESTree.Property[] = [];
 
   while (parser.token !== Token.RightBrace) {
-    let key;
-    let value;
-
-    if (parser.token & (Token.IsIdentifier | Token.Keyword)) {
-      key = parseIdentifier(parser);
-      if (consumeOpt(parser, Token.Colon)) {
-        value = parsePrimaryExpression(parser);
-      }
-    }
-
-    properties.push(
-      wrapNode(parser, {
-        type: 'Property',
-        key,
-        value,
-        kind: 'init',
-        computed: false,
-        method: false,
-        shorthand: false,
-      }),
-    );
+    properties.push(parsePropertyDefinition(parser));
 
     if (parser.token !== Token.Comma) break;
 
@@ -109,6 +118,33 @@ const parseObjectExpression = (
 
 // eslint-disable-next-line arrow-body-style
 const parseObjectLiteral = (parser: IParserState) => {
+  // ObjectLiteral[Yield, Await] :
+  //    { }
+  //    { PropertyDefinitionList[?Yield, ?Await] }
+  //    { PropertyDefinitionList[?Yield, ?Await] , }
+  //
+  // PropertyDefinitionList[Yield, Await] :
+  //    PropertyDefinition[?Yield, ?Await]
+  //    PropertyDefinitionList[?Yield, ?Await] , PropertyDefinition[?Yield, ?Await]
+  // PropertyDefinition[Yield, Await] :
+  //    IdentifierReference[?Yield, ?Await]
+  //    CoverInitializedName[?Yield, ?Await]
+  //    PropertyName[?Yield, ?Await] : AssignmentExpression[+In, ?Yield, ?Await]
+  //    MethodDefinition[?Yield, ?Await]
+  //    ... AssignmentExpression[+In, ?Yield, ?Await]
+  // PropertyName[Yield, Await] :
+  //    LiteralPropertyName
+  //    ComputedPropertyName[?Yield, ?Await]
+  // LiteralPropertyName :
+  //    IdentifierName
+  //    StringLiteral
+  //    NumericLiteral
+  // ComputedPropertyName[Yield, Await] :
+  //    [ AssignmentExpression[+In, ?Yield, ?Await] ]
+  // CoverInitializedName[Yield, Await] :
+  //    IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
+  // Initializer[In, Yield, Await] :
+  //    = AssignmentExpression[?In, ?Yield, ?Await]
   return parseObjectExpression(parser);
 };
 

@@ -25,3 +25,16 @@ export interface IParserState {
     flags: string;
   };
 }
+
+export const enum PropertyKind {
+  None,
+  Getter = 1 << 1,
+  Setter = 1 << 2,
+  Generator = 1 << 3,
+}
+
+export const PropertyKindMap = {
+  [PropertyKind.Generator]: 'init',
+  [PropertyKind.Setter]: 'set',
+  [PropertyKind.Getter]: 'get',
+};

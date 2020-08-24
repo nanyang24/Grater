@@ -26,5 +26,14 @@ export function mapToAssignment(node: any): void {
       }
       return undefined;
     }
+    case 'ObjectExpression': {
+      node.type = 'ObjectPattern';
+      const { properties } = node;
+      let i = properties.length;
+      while (i--) {
+        mapToAssignment(properties[i]);
+      }
+      return undefined;
+    }
   }
 }
