@@ -55,10 +55,22 @@ const parseIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
+export function parseComputedPropertyName(
+  parser: IParserState,
+): ESTree.Expression {
+  // ComputedPropertyName :
+  //   [ AssignmentExpression ]
+  nextToken(parser);
+  const key = parseExpression(parser);
+  consumeOpt(parser, Token.RightBracket);
+  return key;
+}
+
 const parsePropertyDefinition = (parser: IParserState): ESTree.Property => {
   let key;
   let value;
   let kind = PropertyKind.None;
+  let computed = false;
 
   // LiteralPropertyName
   if (parser.token & (Token.IsIdentifier | Token.Keyword)) {
@@ -67,21 +79,25 @@ const parsePropertyDefinition = (parser: IParserState): ESTree.Property => {
 
     if (consumeOpt(parser, Token.Colon)) {
       value = parsePrimaryExpression(parser);
-
-      return wrapNode(parser, {
-        type: 'Property',
-        key,
-        value,
-        kind: PropertyKindMap[kind],
-        computed: false,
-        method: false,
-        shorthand: false,
-      }) as ESTree.Property;
+    }
+  } else if (parser.token === Token.LeftBracket) {
+    key = parseComputedPropertyName(parser);
+    kind |= PropertyKind.Generator;
+    computed = true;
+    if (consumeOpt(parser, Token.Colon)) {
+      value = parsePrimaryExpression(parser);
     }
   }
 
-  // FIXME: ugly
-  return {} as ESTree.Property;
+  return wrapNode(parser, {
+    type: 'Property',
+    key,
+    value,
+    kind: PropertyKindMap[kind],
+    computed,
+    method: false,
+    shorthand: false,
+  }) as ESTree.Property;
 };
 
 const parseObjectExpression = (
@@ -142,6 +158,7 @@ const parseObjectLiteral = (parser: IParserState) => {
   // ComputedPropertyName[Yield, Await] :
   //    [ AssignmentExpression[+In, ?Yield, ?Await] ]
   // CoverInitializedName[Yield, Await] :
+  // https://stackoverflow.com/questions/57583695/what-is-coverinitializednameyield-in-ecma-2015-syntax-grammer
   //    IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
   // Initializer[In, Yield, Await] :
   //    = AssignmentExpression[?In, ?Yield, ?Await]
