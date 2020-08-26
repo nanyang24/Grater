@@ -71,13 +71,22 @@ const parsePropertyDefinition = (parser: IParserState): ESTree.Property => {
   let value;
   let kind = PropertyKind.None;
   let computed = false;
+  let shorthand = false;
 
   // LiteralPropertyName
   if (parser.token & (Token.IsIdentifier | Token.Keyword)) {
     key = parseIdentifier(parser);
     kind |= PropertyKind.Generator;
 
-    if (consumeOpt(parser, Token.Colon)) {
+    // shortHand: `,` `}` `=`
+    if (
+      parser.token === Token.Comma ||
+      parser.token === Token.RightBrace ||
+      parser.token === Token.Assign
+    ) {
+      shorthand = true;
+      value = { ...key };
+    } else if (consumeOpt(parser, Token.Colon)) {
       value = parsePrimaryExpression(parser);
     }
   } else if (parser.token === Token.LeftBracket) {
@@ -87,6 +96,15 @@ const parsePropertyDefinition = (parser: IParserState): ESTree.Property => {
     if (consumeOpt(parser, Token.Colon)) {
       value = parsePrimaryExpression(parser);
     }
+  } else if (parser.token & Token.IsStringOrNumber) {
+    key = parseLiteral(parser);
+    if (consumeOpt(parser, Token.Colon)) {
+      value = parsePrimaryExpression(parser);
+    } else {
+      throw Error;
+    }
+  } else {
+    throw Error;
   }
 
   return wrapNode(parser, {
@@ -96,7 +114,7 @@ const parsePropertyDefinition = (parser: IParserState): ESTree.Property => {
     kind: PropertyKindMap[kind],
     computed,
     method: false,
-    shorthand: false,
+    shorthand,
   }) as ESTree.Property;
 };
 
