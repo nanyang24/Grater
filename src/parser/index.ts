@@ -274,6 +274,10 @@ const parseArrayLiteral = (parser: IParserState) => {
   return parseArrayExpression(parser);
 };
 
+const parseFunctionExpression = () => {
+  // TODO
+};
+
 /**
  * https://tc39.es/ecma262/index.html#sec-primary-expression
  *
@@ -290,11 +294,12 @@ const parsePrimaryExpression = (
    *   Literal
    *   ArrayLiteral[?Yield, ?Await]
    *   ObjectLiteral[?Yield, ?Await]
-   *   FunctionExpression
-   *   ClassExpression[?Yield, ?Await]
-   *   GeneratorExpression
-   *   AsyncFunctionExpression
-   *   AsyncGeneratorExpression
+   *   Function Defining Expressions:
+   *      FunctionExpression
+   *      ClassExpression[?Yield, ?Await]
+   *      GeneratorExpression
+   *      AsyncFunctionExpression
+   *      AsyncGeneratorExpression
    *   RegularExpressionLiteral
    *   TemplateLiteral[?Yield, ?Await, ~Tagged]
    *   CoverParenthesizedExpressionAndArrowParameterList[?Yield, ?Await]
@@ -318,10 +323,13 @@ const parsePrimaryExpression = (
     // Array Initializer
     case Token.LeftBracket:
       return parseArrayLiteral(parser);
-
+    // Object Initializer
     case Token.LeftBrace: {
       return parseObjectLiteral(parser);
     }
+    // FunctionExpression
+    case Token.FunctionKeyword:
+      return parseFunctionExpression();
   }
 
   return '';
@@ -455,6 +463,27 @@ const parseVariableDeclarationList = (parser: IParserState) => {
   return list;
 };
 
+const parseBlockStatement = (parser: IParserState): ESTree.BlockStatement => {
+  // BlockStatement[Yield, Await, Return]:
+  //    Block[?Yield, ?Await, ?Return]
+  // Block[Yield, Await, Return]:
+  //    {StatementList[?Yield, ?Await, ?Return]opt}
+
+  const body: ESTree.Statement[] = [];
+  consumeOpt(parser, Token.LeftBrace);
+
+  while (parser.token !== Token.RightBrace) {
+    body.push(parseStatementItem(parser));
+  }
+
+  consumeOpt(parser, Token.RightBrace);
+
+  return wrapNode(parser, {
+    type: 'BlockStatement',
+    body,
+  });
+};
+
 // https://tc39.es/ecma262/#prod-VariableDeclaration
 const parseVariableStatement = (
   parser: IParserState,
@@ -506,6 +535,9 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
   //   DebuggerStatement
 
   switch (parser.token) {
+    case Token.LeftBrace: {
+      return parseBlockStatement(parser);
+    }
     case Token.VarKeyword: {
       return parseVariableStatement(parser);
     }
