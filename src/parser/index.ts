@@ -274,8 +274,72 @@ const parseArrayLiteral = (parser: IParserState) => {
   return parseArrayExpression(parser);
 };
 
-const parseFunctionExpression = () => {
-  // TODO
+export const validateFunctionName = (parser: IParserState): any => {
+  const { token } = parser;
+  if ((token & Token.Keyword) === Token.Keyword) {
+    throw Error;
+  }
+};
+
+export const parseParameters = (parser: IParserState): ESTree.Parameter[] => {
+  const params: ESTree.Parameter[] = [];
+
+  if (consumeOpt(parser, Token.LeftParen)) {
+    // TODO
+
+    consumeOpt(parser, Token.RightParen);
+  }
+
+  return params;
+};
+
+export const parseFunctionBody = (
+  parser: IParserState,
+): ESTree.FunctionBody => {
+  consumeOpt(parser, Token.LeftBrace);
+
+  const body: ESTree.Statement[] = [];
+
+  while (parser.token !== Token.RightBrace) {
+    body.push(parseStatementItem(parser));
+  }
+
+  consumeOpt(parser, Token.RightBrace);
+
+  return wrapNode(parser, {
+    type: 'BlockStatement',
+    body,
+  });
+};
+
+const parseFunctionExpression = (parser: IParserState) => {
+  nextToken(parser);
+
+  // TODO Async Function
+  const isAsync = false;
+  // TODO Generator Function
+  const isGenerator = false;
+
+  let id: ESTree.Identifier | null = null;
+
+  if (parser.token & (Token.IsIdentifier | Token.IsKeyword)) {
+    validateFunctionName(parser);
+
+    id = parseIdentifier(parser);
+  }
+
+  const params = parseParameters(parser);
+
+  const body = parseFunctionBody(parser);
+
+  return wrapNode(parser, {
+    type: 'FunctionExpression',
+    id,
+    params,
+    body,
+    async: isAsync,
+    generator: isGenerator,
+  });
 };
 
 /**
@@ -329,7 +393,7 @@ const parsePrimaryExpression = (
     }
     // FunctionExpression
     case Token.FunctionKeyword:
-      return parseFunctionExpression();
+      return parseFunctionExpression(parser);
   }
 
   return '';

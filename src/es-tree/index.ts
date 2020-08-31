@@ -19,6 +19,12 @@ export interface Position {
 
 export type SourceType = 'module' | 'script';
 
+export type Parameter =
+  | AssignmentPattern
+  | ArrayPattern
+  | ObjectPattern
+  | Identifier;
+
 /*
  * Programs
  */
