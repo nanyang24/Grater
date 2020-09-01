@@ -8,7 +8,6 @@ import { KeywordTokenTable } from '../tokenizer/utils';
 import { consumeSemicolon, consumeOpt, mapToAssignment } from './utils';
 import { IParserState, PropertyKind, PropertyKindMap } from './type';
 
-// eslint-disable-next-line arrow-body-style
 const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
   return node;
 };
@@ -150,7 +149,6 @@ const parseObjectExpression = (
   return node;
 };
 
-// eslint-disable-next-line arrow-body-style
 const parseObjectLiteral = (parser: IParserState) => {
   // ObjectLiteral[Yield, Await] :
   //    { }
@@ -249,7 +247,6 @@ const parseArrayExpression = (parser: IParserState): ESTree.ArrayExpression => {
   return node;
 };
 
-// eslint-disable-next-line arrow-body-style
 const parseArrayLiteral = (parser: IParserState) => {
   /**
     ArrayLiteral[Yield, Await] :
@@ -281,11 +278,56 @@ export const validateFunctionName = (parser: IParserState): any => {
   }
 };
 
-export const parseParameters = (parser: IParserState): ESTree.Parameter[] => {
+export const parseBindingElement = (parser: IParserState): ESTree.Parameter => {
+  let left;
+
+  if (parser.token & Token.IsPatternStart) {
+    left = parseBindingPattern(parser);
+  } else {
+    left = parseBindingIdentifier(parser);
+    if (parser.token !== Token.Assign) return left;
+  }
+
+  // const right = consumeOpt(parser, Token.Assign)
+  //   ? parseExpression(parser)
+  //   : null;
+
+  return wrapNode(parser, {}) as ESTree.Parameter;
+};
+
+export const parseFormalParameters = (
+  parser: IParserState,
+): ESTree.Parameter[] => {
+  // FormalParameters[Yield, Await]:
+  //    [empty]
+  //    FunctionRestParameter[?Yield, ?Await]
+  //    FormalParameterList[?Yield, ?Await]
+  //    FormalParameterList[?Yield, ?Await],
+  //    FormalParameterList[?Yield, ?Await], FunctionRestParameter[?Yield, ?Await]
+  // FormalParameterList[Yield, Await]:
+  //    FormalParameter[?Yield, ?Await]
+  //    FormalParameterList[?Yield, ?Await], FormalParameter[?Yield, ?Await]
+  // FunctionRestParameter[Yield, Await]:
+  //    BindingRestElement[?Yield, ?Await]
+  // FormalParameter[Yield, Await]:
+  //    BindingElement[?Yield, ?Await]
+  // BindingElement[Yield, Await]:
+  //    SingleNameBinding[?Yield, ?Await]
+  //    BindingPattern[?Yield, ?Await]  Initializer[+In, ?Yield, ?Await]opt
+
   const params: ESTree.Parameter[] = [];
 
   if (consumeOpt(parser, Token.LeftParen)) {
     // TODO
+
+    while (parser.token !== Token.Comma) {
+      params.push(parseBindingElement(parser));
+
+      if (!consumeOpt(parser, Token.Comma)) break;
+      if (parser.token === Token.RightParen) {
+        break;
+      }
+    }
 
     consumeOpt(parser, Token.RightParen);
   }
@@ -328,7 +370,7 @@ const parseFunctionExpression = (parser: IParserState) => {
     id = parseIdentifier(parser);
   }
 
-  const params = parseParameters(parser);
+  const params = parseFormalParameters(parser);
 
   const body = parseFunctionBody(parser);
 
@@ -441,7 +483,6 @@ const parseAssignmentExpression = (
 const parseMemberExpression = (
   parser: IParserState,
   expr: ESTree.Expression,
-  // eslint-disable-next-line arrow-body-style
 ): ESTree.Expression => {
   // TODO
 
@@ -472,22 +513,52 @@ const parseExpression = (parser: IParserState): ESTree.ExpressionStatement => {
   return parseAssignmentExpression(parser, expression);
 };
 
-const parseAndClassifyIdentifier = (
-  parser: IParserState,
-): ESTree.Identifier => {
+const parseBindingIdentifier = (parser: IParserState): ESTree.Identifier => {
+  const { tokenValue, token } = parser;
+
+  // TODO
+  // 1. Strict Mode behavior
+  // 2. let, const binding
+  // 3. await
+  // 4. yield
+
+  if ((token & Token.IsKeyword) === Token.IsKeyword) {
+    throw Error();
+  }
+
   nextToken(parser);
 
   return wrapNode(parser, {
     type: 'Identifier',
-    name: parser.tokenValue,
+    name: tokenValue,
   });
 };
 
-const parseBindingPattern = (parser: IParserState) => {
-  if (parser.token & Token.IsIdentifier) {
-    return parseAndClassifyIdentifier(parser);
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const parseObjectBindingPattern = () => {};
+// eslint-disable-next-line @typescript-eslint/no-empty-function
+export const parseArrayBindingPattern = () => {};
+
+const parseBindingPattern = (
+  parser: IParserState,
+): ESTree.ArrayPattern | ESTree.ObjectPattern => {
+  if (parser.token === Token.LeftBrace) {
+    return parseObjectBindingPattern() as any;
   }
-  return ('' as unknown) as ESTree.Identifier;
+  return parseArrayBindingPattern() as any;
+};
+
+export const parseBindingPatternOrIdentifier = (
+  parser: IParserState,
+): ESTree.BindingPattern => {
+  // BindingPattern:
+  //   ObjectBindingPattern
+  //   ArrayBindingPattern
+  //
+  // BindingIdentifier
+  return parser.token & Token.IsPatternStart
+    ? parseBindingPattern(parser)
+    : parseBindingIdentifier(parser);
 };
 
 const parseVariableDeclaration = (
@@ -499,7 +570,7 @@ const parseVariableDeclaration = (
     | ESTree.Identifier
     | null = null;
 
-  const id = parseBindingPattern(parser);
+  const id = parseBindingPatternOrIdentifier(parser);
 
   if (parser.token === Token.Assign) {
     nextToken(parser);

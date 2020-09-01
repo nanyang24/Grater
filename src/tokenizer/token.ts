@@ -22,9 +22,9 @@ export enum Token {
   NumericLiteral = 2 | IsStringOrNumber,
   StringLiteral = 3 | IsStringOrNumber,
   RegularExpression = 4,
-  FalseKeyword = 5,
-  TrueKeyword = 6,
-  NullKeyword = 7,
+  FalseKeyword = 5 | IsKeyword,
+  TrueKeyword = 6 | IsKeyword,
+  NullKeyword = 7 | IsKeyword,
   Keyword = 8 | IsKeyword,
 
   /* Punctuators */
