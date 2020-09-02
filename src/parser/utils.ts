@@ -2,6 +2,14 @@ import { nextToken } from '../tokenizer/scanner';
 import { IParserState } from './type';
 import { Token } from '../tokenizer/token';
 
+export function consume(parser: IParserState, t: Token): any {
+  if (parser.token !== t) {
+    throw Error;
+  }
+
+  nextToken(parser);
+}
+
 export function consumeOpt(parser: IParserState, t: Token): boolean {
   if (parser.token !== t) return false;
   nextToken(parser);

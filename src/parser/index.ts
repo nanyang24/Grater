@@ -5,7 +5,12 @@ import createParserState from './createParserState';
 import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
 import { KeywordTokenTable } from '../tokenizer/utils';
-import { consumeSemicolon, consumeOpt, mapToAssignment } from './utils';
+import {
+  consumeSemicolon,
+  consumeOpt,
+  mapToAssignment,
+  consume,
+} from './utils';
 import { IParserState, PropertyKind, PropertyKindMap } from './type';
 
 const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
@@ -279,20 +284,20 @@ export const validateFunctionName = (parser: IParserState): any => {
 };
 
 export const parseBindingElement = (parser: IParserState): ESTree.Parameter => {
-  let left;
+  let node;
 
   if (parser.token & Token.IsPatternStart) {
-    left = parseBindingPattern(parser);
+    node = parseBindingPattern(parser);
   } else {
-    left = parseBindingIdentifier(parser);
-    if (parser.token !== Token.Assign) return left;
+    node = parseBindingIdentifier(parser);
+    if (parser.token !== Token.Assign) return node;
   }
 
   // const right = consumeOpt(parser, Token.Assign)
   //   ? parseExpression(parser)
   //   : null;
 
-  return wrapNode(parser, {}) as ESTree.Parameter;
+  return wrapNode(parser, node) as ESTree.Parameter;
 };
 
 export const parseFormalParameters = (
@@ -318,7 +323,7 @@ export const parseFormalParameters = (
   const params: ESTree.Parameter[] = [];
 
   if (consumeOpt(parser, Token.LeftParen)) {
-    // TODO
+    if (consumeOpt(parser, Token.RightParen)) return params;
 
     while (parser.token !== Token.Comma) {
       params.push(parseBindingElement(parser));
@@ -526,6 +531,10 @@ const parseBindingIdentifier = (parser: IParserState): ESTree.Identifier => {
     throw Error();
   }
 
+  if ((token & (Token.IsIdentifier | Token.Keyword)) === 0) {
+    throw Error();
+  }
+
   nextToken(parser);
 
   return wrapNode(parser, {
@@ -534,8 +543,78 @@ const parseBindingIdentifier = (parser: IParserState): ESTree.Identifier => {
   });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function
-export const parseObjectBindingPattern = () => {};
+export const parseBindingProperty = (parser: IParserState) => {
+  // BindingProperty[Yield, Await]:
+  //    SingleNameBinding[?Yield, ?Await]
+  //    PropertyName[?Yield, ?Await]:BindingElement[?Yield, ?Await]
+  // BindingElement[Yield, Await]:
+  //    SingleNameBinding[?Yield, ?Await]
+  //    BindingPattern[?Yield, ?Await]Initializer[+In, ?Yield, ?Await]opt
+  // SingleNameBinding[Yield, Await]:
+  //    BindingIdentifier[?Yield, ?Await]Initializer[+In, ?Yield, ?Await]opt
+
+  let key;
+  let value;
+  let kind = PropertyKind.None;
+  const computed = false;
+  let shorthand = false;
+
+  if (parser.token & (Token.IsIdentifier | Token.Keyword)) {
+    key = parseIdentifier(parser);
+    kind |= PropertyKind.Generator;
+
+    // shortHand: `,` `}` `=`
+    if (
+      parser.token === Token.Comma ||
+      parser.token === Token.RightBrace ||
+      parser.token === Token.Assign
+    ) {
+      shorthand = true;
+      value = {
+        ...key,
+      };
+    } else if (consumeOpt(parser, Token.Colon)) {
+      value = parseBindingElement(parser);
+    }
+  }
+
+  return wrapNode(parser, {
+    type: 'Property',
+    key,
+    value,
+    kind: PropertyKindMap[kind],
+    computed,
+    method: false,
+    shorthand,
+  }) as ESTree.Property;
+};
+
+export const parseObjectBindingPattern = (parser: IParserState) => {
+  // ObjectBindingPattern[Yield, Await]:
+  //    {}
+  //    {BindingRestProperty[?Yield, ?Await]}
+  //    {BindingPropertyList[?Yield, ?Await]}
+  //    {BindingPropertyList[?Yield, ?Await],BindingRestProperty[?Yield, ?Await]opt}
+
+  consume(parser, Token.LeftBrace);
+
+  const properties: ESTree.Property[] = [];
+
+  while (parser.token !== Token.RightBrace) {
+    properties.push(parseBindingProperty(parser));
+
+    if (parser.token !== Token.Comma) break;
+
+    nextToken(parser);
+  }
+
+  consume(parser, Token.RightBrace);
+
+  return wrapNode(parser, {
+    type: 'ObjectPattern',
+    properties,
+  }) as ESTree.ObjectPattern;
+};
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export const parseArrayBindingPattern = () => {};
 
@@ -543,7 +622,7 @@ const parseBindingPattern = (
   parser: IParserState,
 ): ESTree.ArrayPattern | ESTree.ObjectPattern => {
   if (parser.token === Token.LeftBrace) {
-    return parseObjectBindingPattern() as any;
+    return parseObjectBindingPattern(parser);
   }
   return parseArrayBindingPattern() as any;
 };
