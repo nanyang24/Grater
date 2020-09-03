@@ -293,9 +293,15 @@ export const parseBindingElement = (parser: IParserState): ESTree.Parameter => {
     if (parser.token !== Token.Assign) return node;
   }
 
-  // const right = consumeOpt(parser, Token.Assign)
-  //   ? parseExpression(parser)
-  //   : null;
+  if (consumeOpt(parser, Token.Assign)) {
+    const right = parseExpression(parser);
+
+    node = wrapNode(parser, {
+      type: 'AssignmentPattern',
+      left: node,
+      right,
+    });
+  }
 
   return wrapNode(parser, node) as ESTree.Parameter;
 };
