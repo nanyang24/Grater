@@ -466,19 +466,28 @@ const parseExpressionStatement = (
 const parseAssignmentExpression = (
   parser: IParserState,
   expression: ESTree.Expression,
+  isPattern = false,
 ): ESTree.AssignmentExpression | ESTree.Expression => {
   if (parser.token & Token.IsAssignPart) {
     const operator = KeywordTokenTable[parser.token & Token.Musk];
     nextToken(parser);
     const right = parseExpression(parser);
 
-    // TODO: AssignmentPattern
-    return wrapNode(parser, {
+    const AssignmentExpression = {
       type: 'AssignmentExpression',
       left: expression,
       operator,
       right,
-    });
+    };
+    const AssignmentPattern = {
+      type: 'AssignmentPattern',
+      left: expression,
+      right,
+    };
+    return wrapNode(
+      parser,
+      isPattern ? AssignmentPattern : AssignmentExpression,
+    );
   }
 
   return expression;
@@ -576,9 +585,7 @@ export const parseBindingProperty = (parser: IParserState) => {
       parser.token === Token.Assign
     ) {
       shorthand = true;
-      value = {
-        ...key,
-      };
+      value = parseAssignmentExpression(parser, key, true);
     } else if (consumeOpt(parser, Token.Colon)) {
       value = parseBindingElement(parser);
     }
