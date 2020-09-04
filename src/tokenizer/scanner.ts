@@ -7,6 +7,8 @@ import { TokenPickUpFromASCII, forwardChar, isDecimalDigit } from './utils';
 import { Chars } from './charClassifier';
 
 export function scan(parser: IParserState): Token {
+  const lastIsCR = false;
+
   // const { source } = parser;
   // scan the whole stream
   while (parser.index < parser.end) {
@@ -92,6 +94,16 @@ export function scan(parser: IParserState): Token {
         //  `A`...`Z`, `_internal`, `$value`
         case Token.Identifier: {
           return scanIdentifier(parser);
+        }
+
+        case Token.LineFeed: {
+          if (!lastIsCR) {
+            parser.column = 0;
+            parser.line++;
+          }
+          parser.currentChar = parser.source.charCodeAt(++parser.index);
+
+          break;
         }
       }
     } else {

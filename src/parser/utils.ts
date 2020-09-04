@@ -17,6 +17,7 @@ export function consumeOpt(parser: IParserState, t: Token): boolean {
 }
 
 export function consumeSemicolon(parser: IParserState): void {
+  // https://tc39.es/ecma262/#sec-automatic-semicolon-insertion
   if ((parser.token & Token.EOF) !== Token.EOF) {
     throw Error;
   }
