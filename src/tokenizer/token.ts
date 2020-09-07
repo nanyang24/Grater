@@ -12,10 +12,11 @@ export enum Token {
   IsPatternStart = 1 << 13,
   IsAssignPart = 1 << 14,
   IsKeyword = 1 << 15,
+  IsAutoSemicolon = 1 << 16,
 
   Unknown = -1,
   // End-of-file
-  EOF = 1024,
+  EOF = 1024 | IsAutoSemicolon,
 
   /* Constants/Bindings */
   Identifier = 1 | IsIdentifier,
@@ -33,9 +34,9 @@ export enum Token {
   LeftBrace = 12 | IsPatternStart, // {
   Period = 13,
   Ellipsis = 14,
-  RightBrace = 15,
+  RightBrace = 15 | IsAutoSemicolon,
   RightParen = 16,
-  Semicolon = 17,
+  Semicolon = 17 | IsAutoSemicolon,
   Comma = 18,
   LeftBracket = 19 | IsPatternStart, // [
   RightBracket = 20,
