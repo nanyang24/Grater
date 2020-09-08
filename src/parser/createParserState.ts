@@ -20,5 +20,7 @@ export default function createParserState(source: string): IParserState {
     tokenRaw: '',
     tokenValue: '',
     tokenRegExp: undefined,
+
+    lineTerminatorBeforeNextToken: false,
   };
 }

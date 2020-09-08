@@ -102,6 +102,7 @@ export function scan(parser: IParserState): Token {
             parser.line++;
           }
           parser.currentChar = parser.source.charCodeAt(++parser.index);
+          parser.lineTerminatorBeforeNextToken = true;
 
           break;
         }
@@ -117,5 +118,6 @@ export function nextToken(parser: IParserState): void {
   parser.startPos = parser.index;
   parser.startColumn = parser.column;
   parser.startLine = parser.line;
+  parser.lineTerminatorBeforeNextToken = false;
   parser.token = scan(parser);
 }

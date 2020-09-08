@@ -24,6 +24,8 @@ export interface IParserState {
     pattern: string;
     flags: string;
   };
+
+  lineTerminatorBeforeNextToken: boolean;
 }
 
 export const enum PropertyKind {
