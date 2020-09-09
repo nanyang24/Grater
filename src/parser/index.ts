@@ -728,6 +728,27 @@ const parseVariableStatement = (
   });
 };
 
+export function parseReturnStatement(
+  parser: IParserState,
+): ESTree.ReturnStatement {
+  // TODO Global return error
+
+  nextToken(parser);
+
+  const noLineTerminatorHere =
+    (parser.token & Token.IsAutoSemicolon) === Token.IsAutoSemicolon &&
+    parser.lineTerminatorBeforeNextToken;
+
+  const argument = noLineTerminatorHere ? null : parseExpression(parser);
+
+  consumeSemicolon(parser);
+
+  return wrapNode(parser, {
+    type: 'ReturnStatement',
+    argument,
+  });
+}
+
 const parseExpressionStatements = (parser: IParserState) => {
   const { token } = parser;
   let expr: ESTree.Expression;
@@ -767,6 +788,9 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
     }
     case Token.VarKeyword: {
       return parseVariableStatement(parser);
+    }
+    case Token.ReturnKeyword: {
+      return parseReturnStatement(parser);
     }
     default: {
       return parseExpressionStatements(parser);
