@@ -728,9 +728,9 @@ const parseVariableStatement = (
   });
 };
 
-export function parseReturnStatement(
+export const parseReturnStatement = (
   parser: IParserState,
-): ESTree.ReturnStatement {
+): ESTree.ReturnStatement => {
   // TODO Global return error
 
   nextToken(parser);
@@ -747,7 +747,16 @@ export function parseReturnStatement(
     type: 'ReturnStatement',
     argument,
   });
-}
+};
+
+export const parseEmptyStatement = (
+  parser: IParserState,
+): ESTree.EmptyStatement => {
+  nextToken(parser);
+  return wrapNode(parser, {
+    type: 'EmptyStatement',
+  });
+};
 
 const parseExpressionStatements = (parser: IParserState) => {
   const { token } = parser;
@@ -791,6 +800,10 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
     }
     case Token.ReturnKeyword: {
       return parseReturnStatement(parser);
+    }
+    // Empty
+    case Token.Semicolon: {
+      return parseEmptyStatement(parser);
     }
     default: {
       return parseExpressionStatements(parser);
