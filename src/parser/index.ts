@@ -447,9 +447,11 @@ const parsePrimaryExpression = (
     // FunctionExpression
     case Token.FunctionKeyword:
       return parseFunctionExpression(parser);
-  }
 
-  return '';
+    default: {
+      throw KeywordTokenTable[parser.token & Token.Musk];
+    }
+  }
 };
 
 const parseExpressionStatement = (
@@ -758,6 +760,26 @@ export const parseEmptyStatement = (
   });
 };
 
+export const parseThrowStatement = (
+  parser: IParserState,
+): ESTree.ThrowStatement => {
+  nextToken(parser);
+
+  // Can't break the line
+  if (parser.lineTerminatorBeforeNextToken) {
+    throw Error;
+  }
+
+  const argument: ESTree.Expression = parseExpression(parser);
+
+  consumeSemicolon(parser);
+
+  return wrapNode(parser, {
+    type: 'ThrowStatement',
+    argument,
+  });
+};
+
 const parseExpressionStatements = (parser: IParserState) => {
   const { token } = parser;
   let expr: ESTree.Expression;
@@ -804,6 +826,9 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
     // Empty
     case Token.Semicolon: {
       return parseEmptyStatement(parser);
+    }
+    case Token.ThrowKeyword: {
+      return parseThrowStatement(parser);
     }
     default: {
       return parseExpressionStatements(parser);
