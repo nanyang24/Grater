@@ -830,6 +830,12 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
     case Token.ThrowKeyword: {
       return parseThrowStatement(parser);
     }
+
+    case Token.FunctionKeyword:
+    case Token.ClassKeyword: {
+      throw Error;
+    }
+
     default: {
       return parseExpressionStatements(parser);
     }
