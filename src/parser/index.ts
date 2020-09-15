@@ -780,6 +780,16 @@ export const parseThrowStatement = (
   });
 };
 
+const parseDebuggerStatement = (
+  parser: IParserState,
+): ESTree.DebuggerStatement => {
+  nextToken(parser);
+  consumeSemicolon(parser);
+  return wrapNode(parser, {
+    type: 'DebuggerStatement',
+  });
+};
+
 const parseExpressionStatements = (parser: IParserState) => {
   const { token } = parser;
   let expr: ESTree.Expression;
@@ -822,6 +832,9 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
     }
     case Token.ReturnKeyword: {
       return parseReturnStatement(parser);
+    }
+    case Token.DebuggerKeyword: {
+      return parseDebuggerStatement(parser);
     }
     // Empty
     case Token.Semicolon: {
