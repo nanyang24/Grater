@@ -7,12 +7,38 @@ export enum Token {
   // https://stackoverflow.com/questions/6126439/what-does-0xff-do
   Musk = 0xff,
 
-  IsIdentifier = 1 << 11,
-  IsStringOrNumber = 1 << 12,
-  IsPatternStart = 1 << 13,
+  IsLogical = 1 << 5,
+
+  // > Precedence : 3840
+
+  IsIdentifier = 1 << 12,
+  IsStringOrNumber = 1 << 13,
+  IsPatternStart = 1 << 14,
   IsAssignPart = 1 << 14,
   IsKeyword = 1 << 15,
   IsAutoSemicolon = 1 << 16,
+  IsBinaryOp = 1 << 17,
+
+  /* Precedence for binary operators */
+  PrecStart = 8,
+  Precedence = 15 << PrecStart, // 8-11
+  /**
+   * 1 ??
+   * 2 ||
+   * 3 &&
+   * 4 |
+   * 5 ^ +
+   * 6 &
+   * 7 === == !== !=
+   * 8 <= >=
+   * 9 << >> >>>
+   * 10 -
+   * 11 % /
+   * 12 **
+   *
+   *
+   * 15 ·limit·
+   */
 
   Unknown = -1,
   // End-of-file
@@ -41,9 +67,11 @@ export enum Token {
   LeftBracket = 19 | IsPatternStart, // [
   RightBracket = 20,
   Colon = 21,
-  QuestionMark = 22,
-  SingleQuote = 23,
-  DoubleQuote = 24,
+  QuestionMark = 22, // ?
+  QuestionMarkPeriod = 210, // ?.
+  Nullish = 209 | IsBinaryOp | (1 << PrecStart), // ??
+  SingleQuote = 23, // '
+  DoubleQuote = 24, // ''
   JSXClose = 25,
   JSXAutoClose = 26,
 
@@ -72,30 +100,30 @@ export enum Token {
   VoidKeyword = 44 | IsKeyword,
   Negate = 45,
   Complement = 46,
-  Add = 47,
-  Subtract = 48,
-  InKeyword = 49 | IsKeyword,
-  InstanceofKeyword = 50 | IsKeyword,
-  Multiply = 51,
-  Modulo = 52,
-  Divide = 53,
-  Exponentiate = 54,
-  LogicalAnd = 55,
-  LogicalOr = 56,
-  StrictEqual = 57,
-  StrictNotEqual = 58,
-  LooseEqual = 59,
-  LooseNotEqual = 60,
-  LessThanOrEqual = 61,
-  GreaterThanOrEqual = 62,
-  LessThan = 63,
-  GreaterThan = 64,
-  ShiftLeft = 65,
-  ShiftRight = 66,
-  LogicalShiftRight = 67,
-  BitwiseAnd = 68,
-  BitwiseOr = 69,
-  BitwiseXor = 70,
+  Add = 47 | IsBinaryOp | (5 << PrecStart), // +
+  Subtract = 48 | IsBinaryOp | (10 << PrecStart), // -
+  InKeyword = 49 | IsBinaryOp | IsKeyword, // in
+  InstanceofKeyword = 50 | IsBinaryOp | IsKeyword, // instanceof
+  Multiply = 51 | IsBinaryOp, // *
+  Modulo = 52 | IsBinaryOp | (11 << PrecStart), // %
+  Divide = 53 | IsBinaryOp | (11 << PrecStart), // /
+  Exponentiate = 54 | IsBinaryOp | (12 << PrecStart), // **
+  LogicalAnd = 55 | IsBinaryOp | IsLogical | (3 << PrecStart), // &&
+  LogicalOr = 56 | IsBinaryOp | IsLogical | (2 << PrecStart), // ||
+  StrictEqual = 57 | IsBinaryOp | (7 << PrecStart), // ===
+  StrictNotEqual = 58 | IsBinaryOp | (7 << PrecStart), // !==
+  LooseEqual = 59 | IsBinaryOp | (7 << PrecStart), // ==
+  LooseNotEqual = 60 | IsBinaryOp | (7 << PrecStart), // !=
+  LessThanOrEqual = 61 | IsBinaryOp | (8 << PrecStart), // <=
+  GreaterThanOrEqual = 62 | IsBinaryOp | (8 << PrecStart), // >=
+  LessThan = 63 | IsBinaryOp | (8 << PrecStart), // <
+  GreaterThan = 64 | IsBinaryOp | (8 << PrecStart), // >
+  ShiftLeft = 65 | IsBinaryOp | (9 << PrecStart), // <<
+  ShiftRight = 66 | IsBinaryOp | (9 << PrecStart), // >>
+  LogicalShiftRight = 67 | IsBinaryOp | (9 << PrecStart), // >>>
+  BitwiseAnd = 68 | IsBinaryOp | (6 << PrecStart), // &
+  BitwiseOr = 69 | IsBinaryOp | (4 << PrecStart), // |
+  BitwiseXor = 70 | IsBinaryOp | (5 << PrecStart), // ^
 
   /* Variable declaration */
   VarKeyword = 71 | IsKeyword,

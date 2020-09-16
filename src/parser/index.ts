@@ -1,9 +1,6 @@
-import { nextToken } from '../tokenizer/scanner';
 import createParserState from './createParserState';
-
-// typings
-import * as ESTree from '../es-tree';
 import { Token } from '../tokenizer/token';
+import { nextToken } from '../tokenizer/scanner';
 import { KeywordTokenTable } from '../tokenizer/utils';
 import {
   consumeSemicolon,
@@ -11,6 +8,9 @@ import {
   mapToAssignment,
   consume,
 } from './utils';
+
+// typings
+import * as ESTree from '../es-tree';
 import { IParserState, PropertyKind, PropertyKindMap } from './type';
 
 const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
@@ -395,6 +395,99 @@ const parseFunctionExpression = (parser: IParserState) => {
   });
 };
 
+// AdditiveExpression[Yield, Await]:
+//    MultiplicativeExpression[?Yield, ?Await]
+//    AdditiveExpression[?Yield, ?Await]+MultiplicativeExpression[?Yield, ?Await]
+//    AdditiveExpression[?Yield, ?Await]-MultiplicativeExpression[?Yield, ?Await]
+// MultiplicativeExpression[Yield, Await]:
+//     ExponentiationExpression[?Yield, ?Await]
+//     MultiplicativeExpression[?Yield, ?Await]MultiplicativeOperatorExponentiationExpression[?Yield, ?Await]
+
+// ShiftExpression[Yield, Await]:
+//     AdditiveExpression[?Yield, ?Await]
+//     ShiftExpression[?Yield, ?Await]<<AdditiveExpression[?Yield, ?Await]
+//     ShiftExpression[?Yield, ?Await]>>AdditiveExpression[?Yield, ?Await]
+//     ShiftExpression[?Yield, ?Await]>>>AdditiveExpression[?Yield, ?Await]
+
+// RelationalExpression[In, Yield, Await]:
+//     ShiftExpression[?Yield, ?Await]
+//     RelationalExpression[?In, ?Yield, ?Await]<ShiftExpression[?Yield, ?Await]
+//     RelationalExpression[?In, ?Yield, ?Await]>ShiftExpression[?Yield, ?Await]
+//     RelationalExpression[?In, ?Yield, ?Await]<=ShiftExpression[?Yield, ?Await]
+//     RelationalExpression[?In, ?Yield, ?Await]>=ShiftExpression[?Yield, ?Await]
+//     RelationalExpression[?In, ?Yield, ?Await]instanceofShiftExpression[?Yield, ?Await]
+//     [+In]RelationalExpression[+In, ?Yield, ?Await]inShiftExpression[?Yield, ?Await]
+
+// EqualityExpression[In, Yield, Await]:
+//     RelationalExpression[?In, ?Yield, ?Await]
+//     EqualityExpression[?In, ?Yield, ?Await]==RelationalExpression[?In, ?Yield, ?Await]
+//     EqualityExpression[?In, ?Yield, ?Await]!=RelationalExpression[?In, ?Yield, ?Await]
+//     EqualityExpression[?In, ?Yield, ?Await]===RelationalExpression[?In, ?Yield, ?Await]
+//     EqualityExpression[?In, ?Yield, ?Await]!==RelationalExpression[?In, ?Yield, ?Await]
+
+// BitwiseANDExpression[In, Yield, Await]:
+//     EqualityExpression[?In, ?Yield, ?Await]
+//     BitwiseANDExpression[?In, ?Yield, ?Await]&EqualityExpression[?In, ?Yield, ?Await]
+// BitwiseXORExpression[In, Yield, Await]:
+//     BitwiseANDExpression[?In, ?Yield, ?Await]
+//     BitwiseXORExpression[?In, ?Yield, ?Await]^BitwiseANDExpression[?In, ?Yield, ?Await]
+// BitwiseORExpression[In, Yield, Await]:
+//     BitwiseXORExpression[?In, ?Yield, ?Await]
+//     BitwiseORExpression[?In, ?Yield, ?Await]|BitwiseXORExpression[?In, ?Yield, ?Await]
+
+// LogicalANDExpression[In, Yield, Await]:
+//     BitwiseORExpression[?In, ?Yield, ?Await]
+//     LogicalANDExpression[?In, ?Yield, ?Await]&&BitwiseORExpression[?In, ?Yield, ?Await]
+// LogicalORExpression[In, Yield, Await]:
+//     LogicalANDExpression[?In, ?Yield, ?Await]
+//     LogicalORExpression[?In, ?Yield, ?Await]||LogicalANDExpression[?In, ?Yield, ?Await]
+// CoalesceExpression[In, Yield, Await]:
+//     CoalesceExpressionHead[?In, ?Yield, ?Await]??BitwiseORExpression[?In, ?Yield, ?Await]
+//     CoalesceExpressionHead[In, Yield, Await]:
+// CoalesceExpression[?In, ?Yield, ?Await]
+//     BitwiseORExpression[?In, ?Yield, ?Await]
+// ShortCircuitExpression[In, Yield, Await]:
+//     LogicalORExpression[?In, ?Yield, ?Await]
+//     CoalesceExpression[?In, ?Yield, ?Await]
+const parseBinaryExpression = (
+  parser: IParserState,
+  left: ESTree.BinaryExpression | ESTree.Expression,
+  minPrec: number,
+) => {
+  let curToken: Token;
+  let prec: number;
+
+  while (parser.token & Token.IsBinaryOp) {
+    curToken = parser.token;
+    prec = curToken & Token.Precedence; // get current Prec
+
+    // TODO:
+    // 1. The exponentiation operator is right-associative in Binary Operater
+    // 2. Some of the other boundary conditions
+
+    if (prec <= minPrec) return left;
+
+    nextToken(parser);
+
+    left = wrapNode(parser, {
+      type:
+        curToken & Token.IsLogical ||
+        (curToken & Token.Nullish) === Token.Nullish
+          ? 'LogicalExpression'
+          : 'BinaryExpression',
+      left,
+      right: parseBinaryExpression(
+        parser,
+        parseLeftHandSideExpression(parser),
+        prec,
+      ),
+      operator: KeywordTokenTable[curToken & Token.Musk],
+    });
+  }
+
+  return left;
+};
+
 /**
  * https://tc39.es/ecma262/index.html#sec-primary-expression
  *
@@ -467,7 +560,7 @@ const parseExpressionStatement = (
 
 const parseAssignmentExpression = (
   parser: IParserState,
-  expression: ESTree.Expression,
+  left: ESTree.Expression,
   isPattern = false,
 ): ESTree.AssignmentExpression | ESTree.Expression => {
   if (parser.token & Token.IsAssignPart) {
@@ -477,13 +570,13 @@ const parseAssignmentExpression = (
 
     const AssignmentExpression = {
       type: 'AssignmentExpression',
-      left: expression,
+      left,
       operator,
       right,
     };
     const AssignmentPattern = {
       type: 'AssignmentPattern',
-      left: expression,
+      left,
       right,
     };
     return wrapNode(
@@ -492,7 +585,20 @@ const parseAssignmentExpression = (
     );
   }
 
-  return expression;
+  return parseConditionalExpression(parser, left);
+};
+
+const parseConditionalExpression = (
+  parser: IParserState,
+  left: ESTree.Expression,
+) => {
+  const node = parseBinaryExpression(parser, left, /* minPrec */ 4);
+
+  if (parser.token !== Token.QuestionMark) return node;
+
+  // TODO
+
+  return left;
 };
 
 /**
@@ -790,14 +896,24 @@ const parseDebuggerStatement = (
   });
 };
 
-const parseExpressionStatements = (parser: IParserState) => {
-  const { token } = parser;
-  let expr: ESTree.Expression;
+const parseHigherExpression = (
+  parser: IParserState,
+  expression: ESTree.Expression,
+): ESTree.Expression => {
+  // `.foo`, `.[foo]`
+  expression = parseMemberExpression(parser, expression);
 
-  switch (token) {
-    default:
-      expr = parsePrimaryExpression(parser);
-  }
+  // `foo = bar`, `foo[foo] = bar`
+  expression = parseAssignmentExpression(parser, expression);
+
+  return expression;
+};
+
+const parseExpressionStatements = (parser: IParserState) => {
+  let expr: ESTree.Expression = parsePrimaryExpression(parser);
+
+  expr = parseHigherExpression(parser, expr);
+
   return parseExpressionStatement(parser, expr);
 };
 
