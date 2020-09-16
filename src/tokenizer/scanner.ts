@@ -68,6 +68,99 @@ export function scan(parser: IParserState): Token {
           return Token.Assign;
         }
 
+        // `+`, `++`, `+=`
+        case Token.Add: {
+          forwardChar(parser);
+
+          const ch = parser.currentChar;
+
+          if (ch === Chars.Plus) {
+            forwardChar(parser);
+            return Token.Increment;
+          }
+
+          if (ch === Chars.EqualSign) {
+            forwardChar(parser);
+            return Token.AddAssign;
+          }
+
+          return Token.Add;
+        }
+
+        // `&`, `&&`, `&=`
+        case Token.BitwiseAnd: {
+          forwardChar(parser);
+          if (parser.index >= parser.end) return Token.BitwiseAnd;
+          const ch = parser.currentChar;
+
+          if (ch === Chars.Ampersand) {
+            forwardChar(parser);
+            return Token.LogicalAnd;
+          }
+
+          if (ch === Chars.EqualSign) {
+            forwardChar(parser);
+            return Token.BitwiseAndAssign;
+          }
+
+          return Token.BitwiseAnd;
+        }
+
+        // `|`, `||`, `|=`
+        case Token.BitwiseOr: {
+          forwardChar(parser);
+          if (parser.index >= parser.end) return Token.BitwiseOr;
+          const ch = parser.currentChar;
+
+          if (ch === Chars.VerticalBar) {
+            forwardChar(parser);
+            return Token.LogicalOr;
+          }
+          if (ch === Chars.EqualSign) {
+            forwardChar(parser);
+            return Token.BitwiseOrAssign;
+          }
+
+          return Token.BitwiseOr;
+        }
+
+        // `>`, `>=`, `>>`, `>>>`, `>>=`, `>>>=`
+        case Token.GreaterThan: {
+          forwardChar(parser);
+
+          if (parser.index >= parser.end) return Token.GreaterThan;
+
+          const ch = parser.currentChar;
+
+          if (ch === Chars.EqualSign) {
+            forwardChar(parser);
+            return Token.GreaterThanOrEqual;
+          }
+
+          if (ch !== Chars.GreaterThan) return Token.GreaterThan;
+
+          forwardChar(parser);
+
+          if (parser.index < parser.end) {
+            // eslint-disable-next-line no-shadow
+            const ch = parser.currentChar;
+
+            if (ch === Chars.GreaterThan) {
+              if (forwardChar(parser) === Chars.EqualSign) {
+                forwardChar(parser);
+                return Token.LogicalShiftRightAssign;
+              }
+              return Token.LogicalShiftRight;
+            }
+            if (ch === Chars.EqualSign) {
+              forwardChar(parser);
+              return Token.ShiftRightAssign;
+            }
+          }
+
+          return Token.ShiftRight;
+        }
+
         // `'string'`, `"string"`
         case Token.StringLiteral: {
           return scanString(parser, char);

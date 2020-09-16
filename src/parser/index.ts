@@ -471,7 +471,7 @@ const parseBinaryExpression = (
 
     left = wrapNode(parser, {
       type:
-        curToken & Token.IsLogical ||
+        (curToken & Token.IsLogical) === Token.IsLogical ||
         (curToken & Token.Nullish) === Token.Nullish
           ? 'LogicalExpression'
           : 'BinaryExpression',

@@ -7,10 +7,6 @@ export enum Token {
   // https://stackoverflow.com/questions/6126439/what-does-0xff-do
   Musk = 0xff,
 
-  IsLogical = 1 << 5,
-
-  // > Precedence : 3840
-
   IsIdentifier = 1 << 12,
   IsStringOrNumber = 1 << 13,
   IsPatternStart = 1 << 14,
@@ -18,6 +14,7 @@ export enum Token {
   IsKeyword = 1 << 15,
   IsAutoSemicolon = 1 << 16,
   IsBinaryOp = 1 << 17,
+  IsLogical = 1 << 18,
 
   /* Precedence for binary operators */
   PrecStart = 8,
