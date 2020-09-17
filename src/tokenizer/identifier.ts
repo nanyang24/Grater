@@ -10,7 +10,6 @@ export function scanIdentifier(parser: IParserState): Token {
   // get one identifier
   parser.tokenValue = parser.source.slice(parser.tokenPos, parser.index);
 
-  // TODO: is it necessary ?
   // Determine if it is a keyword
   return mapKeywordTable[parser.tokenValue] || Token.Identifier;
 }

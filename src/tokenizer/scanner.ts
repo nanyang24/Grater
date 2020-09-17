@@ -68,6 +68,18 @@ export function scan(parser: IParserState): Token {
           return Token.Assign;
         }
 
+        // `!`, `!=`, `!==`
+        case Token.Negate: {
+          if (forwardChar(parser) !== Chars.EqualSign) {
+            return Token.Negate;
+          }
+          if (forwardChar(parser) !== Chars.EqualSign) {
+            return Token.LooseNotEqual;
+          }
+          forwardChar(parser);
+          return Token.StrictNotEqual;
+        }
+
         // `+`, `++`, `+=`
         case Token.Add: {
           forwardChar(parser);
@@ -86,6 +98,70 @@ export function scan(parser: IParserState): Token {
 
           return Token.Add;
         }
+
+        // `-`, `--`, `-=`
+        case Token.Subtract: {
+          forwardChar(parser);
+          if (parser.index >= parser.end) return Token.Subtract;
+          const ch = parser.currentChar;
+
+          if (ch === Chars.Hyphen) {
+            forwardChar(parser);
+
+            return Token.Decrement;
+          }
+
+          if (ch === Chars.EqualSign) {
+            forwardChar(parser);
+            return Token.SubtractAssign;
+          }
+
+          return Token.Subtract;
+        }
+
+        // `%`, `%=`
+        case Token.Modulo: {
+          if (forwardChar(parser) !== Chars.EqualSign) return Token.Modulo;
+          forwardChar(parser);
+          return Token.ModuloAssign;
+        }
+
+        // `*`, `**`, `*=`, `**=`
+        case Token.Multiply: {
+          forwardChar(parser);
+
+          if (parser.index >= parser.end) return Token.Multiply;
+
+          const ch = parser.currentChar;
+
+          if (ch === Chars.EqualSign) {
+            forwardChar(parser);
+            return Token.MultiplyAssign;
+          }
+
+          if (ch !== Chars.Asterisk) return Token.Multiply;
+
+          if (forwardChar(parser) !== Chars.EqualSign) {
+            return Token.Exponentiate;
+          }
+
+          forwardChar(parser);
+
+          return Token.ExponentiateAssign;
+        }
+
+        // `/`
+        case Token.Divide: {
+          forwardChar(parser);
+
+          return Token.Divide;
+        }
+
+        // `^`, `^=`
+        case Token.BitwiseXor:
+          if (forwardChar(parser) !== Chars.EqualSign) return Token.BitwiseXor;
+          forwardChar(parser);
+          return Token.BitwiseXorAssign;
 
         // `&`, `&&`, `&=`
         case Token.BitwiseAnd: {

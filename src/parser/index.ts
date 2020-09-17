@@ -465,6 +465,8 @@ const parseBinaryExpression = (
     // 1. The exponentiation operator is right-associative in Binary Operater
     // 2. Some of the other boundary conditions
 
+    // If current precedence of operator less than previous operator, Return leaf node early.
+    // And combine the nodes on either side of the high-priority operator to a BinaryExpression.
     if (prec <= minPrec) return left;
 
     nextToken(parser);

@@ -101,7 +101,7 @@ export enum Token {
   Subtract = 48 | IsBinaryOp | (10 << PrecStart), // -
   InKeyword = 49 | IsBinaryOp | IsKeyword, // in
   InstanceofKeyword = 50 | IsBinaryOp | IsKeyword, // instanceof
-  Multiply = 51 | IsBinaryOp, // *
+  Multiply = 51 | IsBinaryOp | (11 << PrecStart), // *
   Modulo = 52 | IsBinaryOp | (11 << PrecStart), // %
   Divide = 53 | IsBinaryOp | (11 << PrecStart), // /
   Exponentiate = 54 | IsBinaryOp | (12 << PrecStart), // **
