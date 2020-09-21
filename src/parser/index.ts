@@ -465,6 +465,7 @@ const parseBinaryExpression = (
     // 1. The exponentiation operator is right-associative in Binary Operater
     // 2. Some of the other boundary conditions
 
+    // Precedence climbing method: https://en.wikipedia.org/wiki/Operator-precedence_parser#Precedence_climbing_method
     // If current precedence of operator less than previous operator, Return leaf node early.
     // And combine the nodes on either side of the high-priority operator to a BinaryExpression.
     if (prec <= minPrec) return left;
@@ -1013,6 +1014,10 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
 };
 
 const parseStatementListItem = (parser: IParserState): ESTree.Statement => {
+  // StatementListItem:
+  //    Statement
+  //    Declaration
+
   switch (parser.token) {
     default: {
       return parseStatement(parser);
