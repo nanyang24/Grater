@@ -354,7 +354,7 @@ export const parseFunctionBody = (
   const body: ESTree.Statement[] = [];
 
   while (parser.token !== Token.RightBrace) {
-    body.push(parseStatementItem(parser));
+    body.push(parseStatementListItem(parser));
   }
 
   consumeOpt(parser, Token.RightBrace);
@@ -810,7 +810,7 @@ const parseBlockStatement = (parser: IParserState): ESTree.BlockStatement => {
   consumeOpt(parser, Token.LeftBrace);
 
   while (parser.token !== Token.RightBrace) {
-    body.push(parseStatementItem(parser));
+    body.push(parseStatementListItem(parser));
   }
 
   consumeOpt(parser, Token.RightBrace);
@@ -898,6 +898,42 @@ const parseDebuggerStatement = (
   });
 };
 
+const parseConsequentOrAlternative = (
+  parser: IParserState,
+): ESTree.Statement => {
+  // TODO:
+  // FunctionDeclarations in IfStatement Statement Clauses
+  // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
+
+  return parseStatement(parser);
+};
+
+const parseIfStatement = (parser: IParserState): ESTree.IfStatement => {
+  // if (Expression) Statement else Statement;
+  // if (Expression) Statement;
+
+  nextToken(parser);
+
+  consume(parser, Token.LeftParen);
+
+  const expression = parseExpression(parser);
+
+  consume(parser, Token.RightParen);
+
+  const consequent = parseConsequentOrAlternative(parser);
+
+  const alternate = consumeOpt(parser, Token.ElseKeyword)
+    ? parseConsequentOrAlternative(parser)
+    : null;
+
+  return wrapNode(parser, {
+    type: 'IfStatement',
+    test: expression,
+    consequent,
+    alternate,
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   expression: ESTree.Expression,
@@ -961,6 +997,9 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
     case Token.ThrowKeyword: {
       return parseThrowStatement(parser);
     }
+    case Token.IfKeyword: {
+      return parseIfStatement(parser);
+    }
 
     case Token.FunctionKeyword:
     case Token.ClassKeyword: {
@@ -973,7 +1012,7 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
   }
 };
 
-const parseStatementItem = (parser: IParserState): ESTree.Statement => {
+const parseStatementListItem = (parser: IParserState): ESTree.Statement => {
   switch (parser.token) {
     default: {
       return parseStatement(parser);
@@ -981,7 +1020,7 @@ const parseStatementItem = (parser: IParserState): ESTree.Statement => {
   }
 };
 
-const parseStatementsList = (parser: IParserState) => {
+const parseStatementList = (parser: IParserState) => {
   // Initialize token
   nextToken(parser);
 
@@ -989,7 +1028,7 @@ const parseStatementsList = (parser: IParserState) => {
 
   // Get the machine moving!
   while (parser.token !== Token.EOF) {
-    statements.push(parseStatementItem(parser));
+    statements.push(parseStatementListItem(parser));
   }
   return statements;
 };
@@ -1001,7 +1040,7 @@ const parserMachine = (source: string): ESTree.Program => {
 
   let body: any[] = [];
 
-  body = parseStatementsList(parserState);
+  body = parseStatementList(parserState);
 
   const nodeTree: ESTree.Program = {
     type: 'Program',
