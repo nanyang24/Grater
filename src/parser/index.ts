@@ -1013,12 +1013,52 @@ const parseStatement = (parser: IParserState): ESTree.Statement => {
   }
 };
 
+// FunctionDeclaration
+//    functionBindingIdentifier ( FormalParameters ){ FunctionBody }
+//    [+Default] function ( FormalParameters ) { FunctionBody }
+const parseFunctionDeclaration = (
+  parser: IParserState,
+): ESTree.FunctionDeclaration => {
+  nextToken(parser);
+
+  // TODO Async Function
+  const isAsync = false;
+  // TODO Generator Function
+  const isGenerator = false;
+
+  let id: ESTree.Identifier | null = null;
+
+  if (parser.token & (Token.IsIdentifier | Token.IsKeyword)) {
+    validateFunctionName(parser);
+
+    id = parseIdentifier(parser);
+  } else {
+    throw Error('Missing Name of Function');
+  }
+
+  const params = parseFormalParameters(parser);
+
+  const body = parseFunctionBody(parser);
+
+  return wrapNode(parser, {
+    type: 'FunctionDeclaration',
+    id,
+    params,
+    body,
+    async: isAsync,
+    generator: isGenerator,
+  });
+};
+
 const parseStatementListItem = (parser: IParserState): ESTree.Statement => {
   // StatementListItem:
   //    Statement
   //    Declaration
 
   switch (parser.token) {
+    case Token.FunctionKeyword:
+    case Token.AsyncKeyword:
+      return parseFunctionDeclaration(parser);
     default: {
       return parseStatement(parser);
     }
