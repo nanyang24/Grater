@@ -79,6 +79,29 @@ export interface Literal extends Expression {
 }
 
 /*
+ * Classes
+ */
+export interface Class extends Node {
+  id: Identifier | null;
+  superClass: Expression | null;
+  body: ClassBody;
+}
+
+export interface ClassBody extends Node {
+  type: 'ClassBody';
+  body: MethodDefinition[];
+}
+
+export interface MethodDefinition extends Node {
+  type: 'MethodDefinition';
+  key: Expression;
+  value: FunctionExpression;
+  kind: 'constructor' | 'method' | 'get' | 'set';
+  computed: boolean;
+  static: boolean;
+}
+
+/*
  * Functions
  */
 export interface Function extends Node {
@@ -110,6 +133,8 @@ export type Statement =
   | VariableDeclaration
   // FunctionDeclaration
   | FunctionDeclaration
+  // ClassDeclaration
+  | ClassDeclaration
   // IterationStatement: for/for-in/while/do-while
   | IterationStatement;
 
@@ -254,6 +279,11 @@ export interface ForInStatement extends Node {
 /*
  * Declarations
  */
+export interface ClassDeclaration extends Class {
+  type: 'ClassDeclaration';
+  id: Identifier; // Required
+}
+
 export interface FunctionDeclaration extends Function {
   type: 'FunctionDeclaration';
 }
@@ -312,11 +342,15 @@ export interface Property extends Node {
   kind: 'init' | 'get' | 'set';
 }
 
+export interface ClassExpression extends Class, Expression {
+  type: 'ClassExpression';
+}
+
 export interface FunctionExpression extends Function, Expression {
   type: 'FunctionExpression';
 }
 
-// Unary operations 一元操作符
+// Unary operations
 export interface UnaryExpression extends Node {
   type: 'UnaryExpression';
   operator: UnaryOperator;

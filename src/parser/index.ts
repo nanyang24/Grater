@@ -346,6 +346,19 @@ export const parseFormalParameters = (
   return params;
 };
 
+export function parseUniqueFormalParameters(
+  parser: IParserState,
+): ESTree.Parameter[] {
+  // UniqueFormalParameters:
+  //    FormalParameters
+  const parameters = parseFormalParameters(parser);
+
+  // TODO
+  // It is a Syntax Error if any element of the BoundNames of FormalParameters also occurs
+  // in the LexicallyDeclaredNames of FunctionBody.
+  return parameters;
+}
+
 export const parseFunctionBody = (
   parser: IParserState,
 ): ESTree.FunctionBody => {
@@ -1050,15 +1063,119 @@ const parseFunctionDeclaration = (
   });
 };
 
+// MethodDefinition:
+//    PropertyName ( UniqueFormalParameters ) { FunctionBody }
+//    GeneratorMethod
+//    AsyncMethod
+//    AsyncGeneratorMethod
+//    getPropertyName () { FunctionBody }
+//    setPropertyName ( PropertySetParameterList ) { FunctionBody }
+// PropertySetParameterList:
+//     FormalParameter
+const parseMethodDefinition = (
+  parser: IParserState,
+): ESTree.FunctionExpression => {
+  const params = parseUniqueFormalParameters(parser);
+  const body = parseFunctionBody(parser);
+
+  return wrapNode(parser, {
+    type: 'FunctionExpression',
+    params,
+    body,
+    async: false, // TODO
+    generator: false,
+    id: null,
+  });
+};
+
+const parseClassElement = (parser: IParserState): ESTree.MethodDefinition => {
+  const kind = 'method';
+  const key: ESTree.Expression = parseIdentifier(parser);
+
+  const value = parseMethodDefinition(parser);
+
+  return wrapNode(parser, {
+    type: 'MethodDefinition',
+    kind,
+    static: false,
+    computed: false,
+    key,
+    value,
+  }) as ESTree.MethodDefinition;
+};
+
+const parseClassBody = (parser: IParserState): ESTree.ClassBody => {
+  const classElementList: ESTree.MethodDefinition[] = [];
+
+  if (consumeOpt(parser, Token.LeftBrace)) {
+    while (parser.token) {
+      if (parser.token === Token.RightBrace) break;
+      classElementList.push(parseClassElement(parser));
+      consumeOpt(parser, Token.Comma);
+    }
+    consume(parser, Token.RightBrace);
+  }
+
+  return wrapNode(parser, {
+    type: 'ClassBody',
+    body: classElementList,
+  });
+};
+
+// https://tc39.es/ecma262/#prod-ClassDeclaration
+// ClassDeclaration:
+//   class BindingIdentifier ClassTail
+//   [+Default] `class` ClassTail
+//
+// ClassTail: ClassHeritage(opt) { ClassBody(opt) }
+// ClassHeritage: extends LeftHandSideExpression
+// ClassBody: ClassElementList
+const parseClassDeclaration = (
+  parser: IParserState,
+): ESTree.ClassDeclaration => {
+  consume(parser, Token.ClassKeyword);
+
+  let id: ESTree.Expression | null = null;
+  let superClass: ESTree.Expression | null = null;
+
+  if (parser.token & Token.IsIdentifier) {
+    id = parseBindingIdentifier(parser);
+    // eslint-disable-next-line no-constant-condition
+  } else if (true) {
+    // TODO: context: Export Default
+    throw Error('missingClassName');
+  }
+
+  if (consumeOpt(parser, Token.ExtendsKeyword)) {
+    superClass = parseLeftHandSideExpression(parser);
+  } else {
+    // TODO
+  }
+
+  const body = parseClassBody(parser);
+
+  return wrapNode(parser, {
+    type: 'ClassDeclaration',
+    id,
+    superClass,
+    body,
+  });
+};
+
 const parseStatementListItem = (parser: IParserState): ESTree.Statement => {
   // StatementListItem:
   //    Statement
   //    Declaration
 
   switch (parser.token) {
+    // Declaration
     case Token.FunctionKeyword:
     case Token.AsyncKeyword:
       return parseFunctionDeclaration(parser);
+    case Token.ClassKeyword:
+      return parseClassDeclaration(parser);
+
+    //    Statement
     default: {
       return parseStatement(parser);
     }
