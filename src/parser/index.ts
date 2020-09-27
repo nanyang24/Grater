@@ -19,6 +19,7 @@ const wrapNode = <T extends any>(parser: IParserState, node: T): T => {
 
 const parseThisExpression = (parser: IParserState) => {
   nextToken(parser);
+  parser.assignable = false;
   return wrapNode(parser, {
     type: 'ThisExpression',
   });
@@ -31,6 +32,7 @@ const parsePrimitiveLiteral = (parser: IParserState) => {
   const value = JSON.parse(tokenValue);
 
   nextToken(parser);
+  parser.assignable = false;
   return wrapNode(parser, {
     type: 'Literal',
     value,
@@ -41,6 +43,8 @@ const parseLiteral = (parser: IParserState): ESTree.Literal => {
   const { tokenValue } = parser;
 
   nextToken(parser);
+
+  parser.assignable = false;
 
   return wrapNode(parser, {
     type: 'Literal',
@@ -398,6 +402,8 @@ const parseFunctionExpression = (parser: IParserState) => {
 
   const body = parseFunctionBody(parser);
 
+  parser.assignable = false;
+
   return wrapNode(parser, {
     type: 'FunctionExpression',
     id,
@@ -499,6 +505,8 @@ const parseBinaryExpression = (
       ),
       operator: KeywordTokenTable[curToken & Token.Musk],
     });
+
+    parser.assignable = false;
   }
 
   return left;
@@ -558,6 +566,7 @@ const parsePrimaryExpression = (
    */
 
   if ((parser.token & Token.IsIdentifier) === Token.IsIdentifier) {
+    parser.assignable = true;
     return parseIdentifier(parser);
   }
 
@@ -606,6 +615,10 @@ const parseAssignmentExpression = (
   isPattern = false,
 ): ESTree.AssignmentExpression | ESTree.Expression => {
   if (parser.token & Token.IsAssignPart) {
+    if (!parser.assignable) {
+      throw Error('lhs');
+    }
+    parser.assignable = false;
     const operator = KeywordTokenTable[parser.token & Token.Musk];
     nextToken(parser);
     const right = parseExpression(parser);
@@ -1189,6 +1202,8 @@ const parseClassDeclaration = (
   }
 
   const body = parseClassBody(parser);
+
+  parser.assignable = false;
 
   return wrapNode(parser, {
     type: 'ClassDeclaration',

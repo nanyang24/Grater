@@ -21,6 +21,8 @@ export default function createParserState(source: string): IParserState {
     tokenValue: '',
     tokenRegExp: undefined,
 
+    // Status:
     lineTerminatorBeforeNextToken: false,
+    assignable: true,
   };
 }

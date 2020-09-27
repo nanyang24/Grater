@@ -26,6 +26,7 @@ export interface IParserState {
   };
 
   lineTerminatorBeforeNextToken: boolean;
+  assignable: boolean;
 }
 
 export const enum PropertyKind {
