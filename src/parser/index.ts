@@ -504,6 +504,32 @@ const parseBinaryExpression = (
   return left;
 };
 
+const parseSuffixUpdateExpression = (
+  parser: IParserState,
+  operand: ESTree.Expression,
+): ESTree.UpdateExpression => {
+  if (parser.lineTerminatorBeforeNextToken) return operand;
+
+  if (!parser.assignable) {
+    throw Error('lhs');
+  }
+
+  parser.assignable = false;
+
+  const operator = KeywordTokenTable[
+    parser.token & Token.Musk
+  ] as ESTree.UpdateOperator;
+
+  nextToken(parser);
+
+  return wrapNode(parser, {
+    type: 'UpdateExpression',
+    argument: operand,
+    operator,
+    prefix: false,
+  });
+};
+
 /**
  * https://tc39.es/ecma262/index.html#sec-primary-expression
  *
@@ -628,7 +654,17 @@ const parseMemberExpression = (
   parser: IParserState,
   expr: ESTree.Expression,
 ): ESTree.Expression => {
-  // TODO
+  while (parser.token) {
+    switch (parser.token) {
+      /* Update expression */
+      case Token.Decrement:
+      case Token.Increment:
+        return parseSuffixUpdateExpression(parser, expr);
+
+      default: {
+      }
+    }
+  }
 
   return expr;
 };
