@@ -15,6 +15,7 @@ export enum Token {
   IsAutoSemicolon = 1 << 16,
   IsBinaryOp = 1 << 17,
   IsLogical = 1 << 18,
+  IsPropertyOrCallExpression = 1 << 19,
 
   /* Precedence for binary operators */
   PrecStart = 8,
@@ -53,19 +54,19 @@ export enum Token {
 
   /* Punctuators */
   Arrow = 10,
-  LeftParen = 11,
+  LeftParen = 11 | IsPropertyOrCallExpression, // (
   LeftBrace = 12 | IsPatternStart, // {
-  Period = 13,
+  Period = 13 | IsPropertyOrCallExpression, // .
   Ellipsis = 14,
   RightBrace = 15 | IsAutoSemicolon,
   RightParen = 16,
   Semicolon = 17 | IsAutoSemicolon,
   Comma = 18,
-  LeftBracket = 19 | IsPatternStart, // [
+  LeftBracket = 19 | IsPatternStart | IsPropertyOrCallExpression, // [
   RightBracket = 20,
   Colon = 21,
   QuestionMark = 22, // ?
-  QuestionMarkPeriod = 210, // ?.
+  QuestionMarkPeriod = 210 | IsPropertyOrCallExpression, // ?.
   Nullish = 209 | IsBinaryOp | (1 << PrecStart), // ??
   SingleQuote = 23, // '
   DoubleQuote = 24, // ''
@@ -73,8 +74,8 @@ export enum Token {
   JSXAutoClose = 26,
 
   /* Update operators */
-  Increment = 27,
-  Decrement = 28,
+  Increment = 27 | IsPropertyOrCallExpression, // +
+  Decrement = 28 | IsPropertyOrCallExpression, // -
 
   /* Assign operators */
   Assign = 29 | IsAssignPart,

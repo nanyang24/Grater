@@ -667,12 +667,28 @@ const parseMemberExpression = (
   parser: IParserState,
   expr: ESTree.Expression,
 ): ESTree.Expression => {
-  while (parser.token) {
+  while (parser.token & Token.IsPropertyOrCallExpression) {
     switch (parser.token) {
       /* Update expression */
+      // This is not part of the MemberExpression specification, but let's simplify the implementation here
       case Token.Decrement:
       case Token.Increment:
         return parseSuffixUpdateExpression(parser, expr);
+
+      /* Property */
+      case Token.Period:
+        nextToken(parser);
+
+        // eslint-disable-next-line no-case-declarations
+        const property = parseIdentifier(parser);
+
+        expr = wrapNode(parser, {
+          type: 'MemberExpression',
+          object: expr,
+          computed: false,
+          property,
+        });
+        break;
 
       default: {
       }
@@ -1157,7 +1173,7 @@ const parseClassBody = (parser: IParserState): ESTree.ClassBody => {
   const classElementList: ESTree.MethodDefinition[] = [];
 
   if (consumeOpt(parser, Token.LeftBrace)) {
-    while (parser.token) {
+    while (parser.token !== Token.RightBrace) {
       if (parser.token === Token.RightBrace) break;
       classElementList.push(parseClassElement(parser));
       consumeOpt(parser, Token.Comma);
