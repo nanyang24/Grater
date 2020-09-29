@@ -679,7 +679,6 @@ const parseMemberExpression = (
       case Token.Period:
         nextToken(parser);
 
-        // eslint-disable-next-line no-case-declarations
         const property = parseIdentifier(parser);
 
         expr = wrapNode(parser, {
@@ -689,6 +688,25 @@ const parseMemberExpression = (
           property,
         });
         break;
+
+      /* Property */
+      case Token.LeftBracket: {
+        nextToken(parser);
+
+        const property = parseExpression(parser);
+
+        consume(parser, Token.RightBracket);
+
+        parser.assignable = false;
+
+        expr = wrapNode(parser, {
+          type: 'MemberExpression',
+          object: expr,
+          computed: true,
+          property,
+        });
+        break;
+      }
 
       default: {
       }
@@ -1155,7 +1173,15 @@ const parseMethodDefinition = (
 
 const parseClassElement = (parser: IParserState): ESTree.MethodDefinition => {
   const kind = 'method';
-  const key: ESTree.Expression = parseIdentifier(parser);
+  let computed = false;
+  let key: ESTree.Expression | null = null;
+
+  if (parser.token & (Token.IsIdentifier | Token.IsKeyword)) {
+    key = parseIdentifier(parser);
+  } else if (parser.token === Token.LeftBracket) {
+    computed = true;
+    key = parseComputedPropertyName(parser);
+  }
 
   const value = parseMethodDefinition(parser);
 
@@ -1163,7 +1189,7 @@ const parseClassElement = (parser: IParserState): ESTree.MethodDefinition => {
     type: 'MethodDefinition',
     kind,
     static: false,
-    computed: false,
+    computed,
     key,
     value,
   }) as ESTree.MethodDefinition;

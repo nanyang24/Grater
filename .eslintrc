@@ -49,6 +49,7 @@
     "no-nested-ternary": 0,
     "arrow-body-style": 0,
     "no-case-declarations": 0,
+    "no-shadow": 0,
     "no-use-before-define": ["error", { "variables": false }],
     "max-len": [
       "error",
