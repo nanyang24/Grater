@@ -310,6 +310,22 @@ export const parseBindingElement = (parser: IParserState): ESTree.Parameter => {
   return wrapNode(parser, node) as ESTree.Parameter;
 };
 
+const parseArguments = (parser: IParserState) => {
+  const args = [];
+  consume(parser, Token.LeftParen);
+
+  while (parser.token !== Token.RightParen) {
+    args.push(parseExpression(parser));
+
+    if (consumeOpt(parser, Token.Comma)) continue;
+    if (parser.token === Token.RightParen) break;
+  }
+
+  consume(parser, Token.RightParen);
+
+  return args;
+};
+
 export const parseFormalParameters = (
   parser: IParserState,
 ): ESTree.Parameter[] => {
@@ -704,6 +720,20 @@ const parseMemberExpression = (
           object: expr,
           computed: true,
           property,
+        });
+        break;
+      }
+
+      /* Call */
+      case Token.LeftParen: {
+        const args = parseArguments(parser);
+
+        parser.assignable = false;
+
+        expr = wrapNode(parser, {
+          type: 'CallExpression',
+          callee: expr,
+          arguments: args,
         });
         break;
       }

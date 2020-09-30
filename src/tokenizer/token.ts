@@ -61,7 +61,7 @@ export enum Token {
   RightBrace = 15 | IsAutoSemicolon,
   RightParen = 16,
   Semicolon = 17 | IsAutoSemicolon,
-  Comma = 18,
+  Comma = 18, // ,
   LeftBracket = 19 | IsPatternStart | IsPropertyOrCallExpression, // [
   RightBracket = 20,
   Colon = 21,
