@@ -430,6 +430,22 @@ const parseFunctionExpression = (parser: IParserState) => {
   });
 };
 
+const parseUnaryExpression = (parser: IParserState) => {
+  const operator = KeywordTokenTable[
+    parser.token & Token.Musk
+  ] as ESTree.UnaryOperator;
+  nextToken(parser);
+  const argument = parseLeftHandSideExpression(parser);
+
+  parser.assignable = false;
+  return wrapNode(parser, {
+    type: 'UnaryExpression',
+    operator,
+    argument,
+    prefix: true,
+  });
+};
+
 // AdditiveExpression[Yield, Await]:
 //    MultiplicativeExpression[?Yield, ?Await]
 //    AdditiveExpression[?Yield, ?Await]+MultiplicativeExpression[?Yield, ?Await]
@@ -591,6 +607,15 @@ const parsePrimaryExpression = (
   }
 
   switch (parser.token) {
+    case Token.TypeofKeyword:
+    case Token.DeleteKeyword:
+    case Token.VoidKeyword:
+    case Token.Negate:
+    case Token.Complement:
+    case Token.Add:
+    case Token.Subtract:
+      return parseUnaryExpression(parser);
+
     case Token.ThisKeyword:
       return parseThisExpression(parser);
     case Token.TrueKeyword:

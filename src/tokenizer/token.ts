@@ -96,8 +96,8 @@ export enum Token {
   TypeofKeyword = 42 | IsKeyword,
   DeleteKeyword = 43 | IsKeyword,
   VoidKeyword = 44 | IsKeyword,
-  Negate = 45,
-  Complement = 46,
+  Negate = 45, // !
+  Complement = 46, // ~
   Add = 47 | IsBinaryOp | (5 << PrecStart), // +
   Subtract = 48 | IsBinaryOp | (10 << PrecStart), // -
   InKeyword = 49 | IsBinaryOp | IsKeyword, // in
