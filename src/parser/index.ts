@@ -544,6 +544,31 @@ const parseBinaryExpression = (
   return left;
 };
 
+const parsePrefixUpdateExpression = (
+  parser: IParserState,
+): ESTree.UpdateExpression => {
+  const operator = KeywordTokenTable[
+    parser.token & Token.Musk
+  ] as ESTree.UpdateOperator;
+
+  nextToken(parser);
+
+  const argument = parseLeftHandSideExpression(parser);
+
+  if (!parser.assignable) {
+    throw Error('lhs');
+  }
+
+  parser.assignable = false;
+
+  return wrapNode(parser, {
+    type: 'UpdateExpression',
+    argument,
+    operator,
+    prefix: true,
+  });
+};
+
 const parseSuffixUpdateExpression = (
   parser: IParserState,
   operand: ESTree.Expression,
@@ -607,6 +632,10 @@ const parsePrimaryExpression = (
   }
 
   switch (parser.token) {
+    case Token.Decrement:
+    case Token.Increment:
+      return parsePrefixUpdateExpression(parser);
+
     case Token.TypeofKeyword:
     case Token.DeleteKeyword:
     case Token.VoidKeyword:
