@@ -209,9 +209,10 @@ const scanString = (parser: IParserState, quote: number): any => {
 
       starSign = parser.index + 1;
     }
+    if (parser.index >= parser.end) throw Error('Unterminated string');
 
     curChar = forwardChar(parser);
   }
 
-  return undefined;
+  throw Error('Unterminated string');
 };
