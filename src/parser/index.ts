@@ -595,6 +595,37 @@ const parseSuffixUpdateExpression = (
   });
 };
 
+const parseNewExpression = (parser: IParserState) => {
+  // NewExpression:
+  //    MemberExpression
+  //    newNewExpression
+  // MetaProperty:
+  //    NewTarget
+  //    ImportMeta
+  // NewTarget:
+  //    new.target
+
+  nextToken(parser);
+
+  // new.target
+  if (consumeOpt(parser, Token.Period)) {
+    if (parser.token !== Token.Target) throw 'Invalid New Target';
+    parser.assignable = false;
+
+    // TODO: parseMetaProperty
+    return;
+  }
+  const callee = parseMemberExpression(parser, parsePrimaryExpression(parser));
+  const args = parser.token === Token.LeftParen ? parseArguments(parser) : [];
+  parser.assignable = false;
+
+  return wrapNode(parser, {
+    type: 'NewExpression',
+    callee,
+    arguments: args,
+  });
+};
+
 /**
  * https://tc39.es/ecma262/index.html#sec-primary-expression
  *
@@ -657,6 +688,9 @@ const parsePrimaryExpression = (
     // Object Initializer
     case Token.LeftBrace: {
       return parseObjectLiteral(parser);
+    }
+    case Token.NewKeyword: {
+      return parseNewExpression(parser);
     }
     // FunctionExpression
     case Token.FunctionKeyword:
