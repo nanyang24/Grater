@@ -595,6 +595,15 @@ const parseSuffixUpdateExpression = (
   });
 };
 
+const parseMetaProperty = (parser: IParserState, meta: ESTree.Identifier) => {
+  const property = parseIdentifier(parser);
+  return wrapNode(parser, {
+    type: 'MetaProperty',
+    meta,
+    property,
+  });
+};
+
 const parseNewExpression = (parser: IParserState) => {
   // NewExpression:
   //    MemberExpression
@@ -605,16 +614,17 @@ const parseNewExpression = (parser: IParserState) => {
   // NewTarget:
   //    new.target
 
-  nextToken(parser);
+  const meta = parseIdentifier(parser);
 
   // new.target
   if (consumeOpt(parser, Token.Period)) {
+    // TODO: Context, new.target only allowed within functions
     if (parser.token !== Token.Target) throw 'Invalid New Target';
     parser.assignable = false;
 
-    // TODO: parseMetaProperty
-    return;
+    return parseMetaProperty(parser, meta);
   }
+
   const callee = parseMemberExpression(parser, parsePrimaryExpression(parser));
   const args = parser.token === Token.LeftParen ? parseArguments(parser) : [];
   parser.assignable = false;
