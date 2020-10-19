@@ -668,10 +668,6 @@ const parsePrimaryExpression = (
     return parseIdentifier(parser);
   }
 
-  if ((parser.token & Token.IsStringOrNumber) === Token.IsStringOrNumber) {
-    return parseLiteral(parser);
-  }
-
   switch (parser.token) {
     case Token.Decrement:
     case Token.Increment:
@@ -692,6 +688,9 @@ const parsePrimaryExpression = (
     case Token.FalseKeyword:
     case Token.NullKeyword:
       return parsePrimitiveLiteral(parser);
+    case Token.IsStringOrNumber: {
+      return parseLiteral(parser);
+    }
     // Array Initializer
     case Token.LeftBracket:
       return parseArrayLiteral(parser);
@@ -1300,7 +1299,7 @@ const parseMethodDefinition = (
 };
 
 const parseClassElement = (parser: IParserState): ESTree.MethodDefinition => {
-  const kind = 'method';
+  let kind = 'method';
   let computed = false;
   let key: ESTree.Expression | null = null;
 
@@ -1312,6 +1311,10 @@ const parseClassElement = (parser: IParserState): ESTree.MethodDefinition => {
   }
 
   const value = parseMethodDefinition(parser);
+
+  if (parser.tokenValue === 'constructor') {
+    kind = 'constructor';
+  }
 
   return wrapNode(parser, {
     type: 'MethodDefinition',

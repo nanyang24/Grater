@@ -165,18 +165,18 @@ export enum Token {
   YieldKeyword = 106 | IsIdentifier,
 
   /* Contextual keywords */
-  AsKeyword = 107,
-  AsyncKeyword = 108,
-  AwaitKeyword = 109 | IsIdentifier,
-  ConstructorKeyword = 110,
-  GetKeyword = 111,
-  SetKeyword = 112,
-  FromKeyword = 113,
-  OfKeyword = 114,
+  AsKeyword = 107 | IsKeyword,
+  AsyncKeyword = 108 | IsKeyword,
+  AwaitKeyword = 109 | IsKeyword,
+  ConstructorKeyword = 110 | IsKeyword,
+  GetKeyword = 111 | IsKeyword,
+  SetKeyword = 112 | IsKeyword,
+  FromKeyword = 113 | IsKeyword,
+  OfKeyword = 114 | IsKeyword,
   EnumKeyword = 115 | IsKeyword,
 
-  Eval = 116,
-  Arguments = 117,
+  Eval = 116 | IsKeyword,
+  Arguments = 117 | IsKeyword,
 
   EscapedReserved = 118,
   EscapedFutureReserved = 119,
