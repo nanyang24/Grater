@@ -41,3 +41,9 @@ export const PropertyKindMap = {
   [PropertyKind.Setter]: 'set',
   [PropertyKind.Getter]: 'get',
 };
+
+export const enum Context {
+  Empty = 1,
+  SuperCall,
+  NewTarget,
+}
