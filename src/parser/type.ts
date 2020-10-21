@@ -44,6 +44,6 @@ export const PropertyKindMap = {
 
 export const enum Context {
   Empty = 1,
-  SuperCall,
-  NewTarget,
+  SuperCall = 1 << 1,
+  NewTarget = 1 << 2,
 }
