@@ -46,4 +46,6 @@ export const enum Context {
   Empty = 1,
   SuperCall = 1 << 1,
   NewTarget = 1 << 2,
+  Strict = 1 << 3,
+  Global = 1 << 4,
 }
