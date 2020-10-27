@@ -754,7 +754,8 @@ const parsePrimaryExpression = (
     case Token.FalseKeyword:
     case Token.NullKeyword:
       return parsePrimitiveLiteral(parser, context);
-    case Token.IsStringOrNumber: {
+    case Token.NumericLiteral:
+    case Token.StringLiteral: {
       return parseLiteral(parser, context);
     }
     // Array Initializer
