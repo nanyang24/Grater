@@ -1,6 +1,8 @@
 import * as assert from 'assert';
 
+import { fail } from '../tester'
 import { Token } from '../../src/tokenizer/token';
+import { Context } from '../../src/parser/type'
 import createParserState from '../../src/parser/createParserState';
 import { scan } from '../../src/tokenizer/scanner';
 
@@ -12,10 +14,11 @@ function process(
   return unicode.map((item, index) => [tokenType, item, character[index]]);
 }
 
-function fail(name: string, source: string) {
+function failViaScan(name: string, source: string) {
   it(name, () => {
     const state = createParserState(source);
-    assert.rejects(async () => scan(state));
+    console.log(state)
+    assert.throws(() => scan(state));
   });
 }
 
@@ -254,32 +257,29 @@ describe('String', () => {
     });
   }
 
-  fail('fails on """', '"""');
-  fail("fails on '''", "'''");
-  fail('fails on "\"', '"\"');
-  fail("fails on '\'", "'\'");
-  fail('fails on "\\\"', '"\\\"');
-  fail('fails on "\\u000G"', '"\\u000G"');
-  fail('fails on "\\u1"', '"\\u1"');
-  fail('fails on "\\uA"', '"\\uA"');
-  fail('fails on "\\uAA"', '"\\uAA"');
-  fail('fails on "\\u111"', '"\\u111"');
-  fail('fails on "\\uAAA"', '"\\uAAA"');
-  fail('fails on "\\u{1F_639}"', '"\\u{1F_639}"');
-  fail("fails on '\\u{1F_639}'", "'\\u{1F_639}'");
-  fail('fails on "\\u"', '"\\u"');
-  fail("fails on '\\u'", "'\\u'");
-  fail('fails on "\\8"', '"\\8"');
-  fail('fails on "\\9', '"\\9"');
+  fail('fails on  Missing expected exception', [
+    ['"""', Context.Empty,],
+    ["'''", Context.Empty,],
+    ['"\\"', Context.Empty,],
+    ["'\\'", Context.Empty,],
+  ]);
+  failViaScan('fails on "\\\"', '"\\\"');
+  failViaScan('fails on "\\u000G"', '"\\u000G"');
+  failViaScan('fails on "\\u{1F_639}"', '"\\u{1F_639}"');
+  failViaScan("fails on '\\u{1F_639}'", "'\\u{1F_639}'");
+  failViaScan('fails on "\\u"', '"\\u"');
+  failViaScan("fails on '\\u'", "'\\u'");
+  failViaScan('fails on "\\8"', '"\\8"');
+  failViaScan('fails on "\\9', '"\\9"');
   
-  fail("fails on '\\\'", "'\\\'");
-  fail(
+  failViaScan("fails on '\\\'", "'\\\'");
+  failViaScan(
     `fails on "
     "`,
     `"
   "`,
   );
-  fail(
+  failViaScan(
     `fails on '
     '`,
     `'
@@ -287,8 +287,8 @@ describe('String', () => {
     );
     
     // Strict Mode:
-    // fail('fails on "\\1"', '"\\1"');
-    // fail('fails on "\\7"', '"\\7"');
-    // fail('fails on "\\1"', '"\\1"');
+    // failViaScan('fails on "\\1"', '"\\1"');
+    // failViaScan('fails on "\\7"', '"\\7"');
+    // failViaScan('fails on "\\1"', '"\\1"');
 
 });
