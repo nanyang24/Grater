@@ -942,7 +942,7 @@ const parseLeftHandSideExpression = (
 const parseExpression = (
   parser: IParserState,
   context: Context,
-): ESTree.ExpressionStatement => {
+): ESTree.Expression => {
   const expression: ESTree.Expression = parseLeftHandSideExpression(
     parser,
     context,
@@ -950,6 +950,32 @@ const parseExpression = (
 
   return parseAssignmentExpression(parser, context, expression);
 };
+
+export function parseSequenceExpression(
+  parser: IParserState,
+  context: Context,
+): ESTree.SequenceExpression {
+  const parseSequenceExpressions = (
+    parser: IParserState,
+    context: Context,
+    expr: ESTree.ExpressionStatement,
+  ) => {
+    const expressions: ESTree.ExpressionStatement[] = [expr];
+    while (consumeOpt(parser, Token.Comma)) {
+      expressions.push(parseExpression(parser, context));
+    }
+
+    return wrapNode(parser, context, {
+      type: 'SequenceExpression',
+      expressions,
+    });
+  };
+
+  const expression = parseExpression(parser, context);
+  return parser.token === Token.Comma
+    ? parseSequenceExpressions(parser, context, expression)
+    : expression;
+}
 
 const parseBindingIdentifier = (
   parser: IParserState,
@@ -1273,6 +1299,80 @@ const parseIfStatement = (
   });
 };
 
+const parseForStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.ForStatement => {
+  consume(parser, Token.ForKeyword);
+
+  consume(parser, Token.LeftParen);
+
+  let init: ESTree.Expression | null | any = null;
+  let test: ESTree.Expression | null = null;
+  let update: ESTree.Expression | null = null;
+
+  if (parser.token !== Token.Semicolon) {
+    if (
+      parser.token === Token.VarKeyword ||
+      parser.token === Token.LetKeyword ||
+      parser.token === Token.ConstKeyword
+    ) {
+      // TODO: Let / Const
+
+      if (parser.token === Token.VarKeyword) {
+        nextToken(parser);
+
+        init = wrapNode(parser, context, {
+          type: 'VariableDeclaration',
+          kind: 'var',
+          declarations: parseVariableDeclarationList(parser, context),
+        });
+
+        parser.assignable = true;
+      }
+    } else if (parser.token & Token.IsPatternStart) {
+      init = (parser.token === Token.LeftBrace
+        ? parseObjectLiteral
+        : parseArrayLiteral)(parser, context);
+
+      init = parseMemberExpression(parser, context, init);
+    } else {
+      // Pass the 'Context.DisallowIn' bit so that 'in' isn't parsed in a 'BinaryExpression' as a
+      // binary operator. 'in' makes it a for-in loop, 'not' an 'in' expression
+      init = parseLeftHandSideExpression(parser, context);
+    }
+  }
+
+  // TODO: for-of
+  // TODO: for-in
+
+  init = parseHigherExpression(parser, context, init);
+
+  consume(parser, Token.Semicolon);
+
+  // test
+  if (parser.token !== Token.Semicolon) {
+    test = parseSequenceExpression(parser, context);
+  }
+
+  consume(parser, Token.Semicolon);
+
+  // update
+  if (parser.token !== Token.RightParen) {
+    update = parseSequenceExpression(parser, context);
+  }
+
+  consume(parser, Token.RightParen);
+
+  return wrapNode(parser, context, {
+    type: 'ForStatement',
+    init,
+    test,
+    update,
+    body: parseStatement(parser, context),
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   context: Context,
@@ -1342,6 +1442,9 @@ const parseStatement = (
     }
     case Token.IfKeyword: {
       return parseIfStatement(parser, context);
+    }
+    case Token.ForKeyword: {
+      return parseForStatement(parser, context);
     }
 
     case Token.FunctionKeyword:

@@ -3,6 +3,34 @@ import { Token } from './token';
 import { forwardChar, betterFromCharCode, toHex } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
 
+// Deliberately negative
+export const enum Escape {
+  Empty = -1,
+  StrictOctal = -2,
+  EightOrNine = -3,
+  InvalidHex = -4,
+  OutOfRange = -5,
+}
+
+function handleError(code: Escape) {
+  switch (code) {
+    case Escape.Empty:
+      return;
+
+    case Escape.StrictOctal:
+      throw Error;
+
+    case Escape.EightOrNine:
+      throw Error;
+
+    case Escape.InvalidHex:
+      throw Error;
+
+    case Escape.OutOfRange:
+      throw Error;
+  }
+}
+
 const transformEscape = (parser: IParserState, char: number): number => {
   switch (char) {
     // SingleEscapeCharacter::one of ' " \ b f n r t v
@@ -97,16 +125,16 @@ const transformEscape = (parser: IParserState, char: number): number => {
     // invalid escapes `8`, `9`
     case Chars.Eight:
     case Chars.Nine:
-      return -1;
+      return Escape.EightOrNine;
 
     // HexEscapeSequence : https://tc39.es/ecma262/#prod-HexEscapeSequence
     // \x HexDigit HexDigit
     case Chars.LowerX: {
       const ch1 = forwardChar(parser);
-      if ((CharTypes[ch1] & CharSymbol.Hex) === 0) return -1;
+      if ((CharTypes[ch1] & CharSymbol.Hex) === 0) return Escape.InvalidHex;
       const hi = toHex(ch1);
       const ch2 = forwardChar(parser);
-      if ((CharTypes[ch2] & CharSymbol.Hex) === 0) return -1;
+      if ((CharTypes[ch2] & CharSymbol.Hex) === 0) return Escape.InvalidHex;
       const lo = toHex(ch2);
 
       return (hi << 4) | lo;
@@ -134,24 +162,24 @@ const transformEscape = (parser: IParserState, char: number): number => {
         let code = 0;
         while ((CharTypes[forwardChar(parser)] & CharSymbol.Hex) !== 0) {
           code = (code << 4) | toHex(parser.currentChar);
-          if (code > Chars.NonBMPMax) return -1;
+          if (code > Chars.NonBMPMax) return Escape.OutOfRange;
         }
 
         if (
           parser.currentChar < 1 ||
           (parser.currentChar as number) !== Chars.RightBrace
         ) {
-          return -1;
+          return Escape.InvalidHex;
         }
         return code;
       } else {
-        if ((CharTypes[ch] & CharSymbol.Hex) === 0) return -1;
+        if ((CharTypes[ch] & CharSymbol.Hex) === 0) return Escape.InvalidHex;
         const ch2 = parser.source.charCodeAt(parser.index + 1);
-        if ((CharTypes[ch2] & CharSymbol.Hex) === 0) return -1;
+        if ((CharTypes[ch2] & CharSymbol.Hex) === 0) return Escape.InvalidHex;
         const ch3 = parser.source.charCodeAt(parser.index + 2);
-        if ((CharTypes[ch3] & CharSymbol.Hex) === 0) return -1;
+        if ((CharTypes[ch3] & CharSymbol.Hex) === 0) return Escape.InvalidHex;
         const ch4 = parser.source.charCodeAt(parser.index + 3);
-        if ((CharTypes[ch4] & CharSymbol.Hex) === 0) return -1;
+        if ((CharTypes[ch4] & CharSymbol.Hex) === 0) return Escape.InvalidHex;
 
         parser.index += 3;
         parser.column += 3;
@@ -204,7 +232,12 @@ const scanString = (parser: IParserState, quote: number): any => {
       } else {
         const code = transformEscape(parser, curChar);
 
-        if (code >= 0) sumString += betterFromCharCode(code);
+        // No error
+        if (code >= 0) {
+          sumString += betterFromCharCode(code);
+        } else {
+          handleError(code);
+        }
       }
 
       starSign = parser.index + 1;
