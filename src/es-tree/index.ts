@@ -141,6 +141,7 @@ export type Statement =
 export type IterationStatement =
   | ForStatement
   | ForInStatement
+  | ForOfStatement
   | WhileStatement
   | DoWhileStatement;
 
@@ -274,6 +275,14 @@ export interface ForInStatement extends Node {
   left: VariableDeclaration | Expression;
   right: Expression;
   body: Statement;
+}
+
+export interface ForOfStatement extends Node {
+  type: 'ForOfStatement';
+  left: VariableDeclaration | Expression;
+  right: Expression;
+  body: Statement;
+  await: boolean;
 }
 
 /*

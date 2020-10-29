@@ -1302,7 +1302,7 @@ const parseIfStatement = (
 const parseForStatement = (
   parser: IParserState,
   context: Context,
-): ESTree.ForStatement => {
+): ESTree.ForStatement | ESTree.ForInStatement | ESTree.ForOfStatement => {
   consume(parser, Token.ForKeyword);
 
   consume(parser, Token.LeftParen);
@@ -1343,8 +1343,42 @@ const parseForStatement = (
     }
   }
 
-  // TODO: for-of
-  // TODO: for-in
+  if (consumeOpt(parser, Token.InKeyword)) {
+    if (!parser.assignable) {
+      throw 'can not assign to for-loop';
+    }
+
+    mapToAssignment(init);
+
+    const right = parseExpression(parser, context);
+    consume(parser, Token.RightParen);
+
+    return wrapNode(parser, context, {
+      type: 'ForInStatement',
+      left: init,
+      right,
+      body: parseStatement(parser, context),
+    });
+  }
+
+  if (consumeOpt(parser, Token.OfKeyword)) {
+    if (!parser.assignable) {
+      throw 'can not assign to for-loop';
+    }
+
+    mapToAssignment(init);
+
+    const right = parseExpression(parser, context);
+    consume(parser, Token.RightParen);
+
+    return wrapNode(parser, context, {
+      type: 'ForOfStatement',
+      left: init,
+      right,
+      body: parseStatement(parser, context),
+      await: false,
+    });
+  }
 
   init = parseHigherExpression(parser, context, init);
 
