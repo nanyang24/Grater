@@ -9,7 +9,6 @@ import { Chars } from './charClassifier';
 export function scan(parser: IParserState): Token {
   const lastIsCR = false;
 
-  // const { source } = parser;
   // scan the whole stream
   while (parser.index < parser.end) {
     parser.tokenPos = parser.index;
@@ -41,6 +40,27 @@ export function scan(parser: IParserState): Token {
         case Token.WhiteSpace: {
           forwardChar(parser);
           break;
+        }
+
+        // `<`, `<=`, `<<`
+        case Token.LessThan: {
+          const ch = forwardChar(parser);
+          if (parser.index < parser.end) {
+            if (ch === Chars.LessThan) {
+              if (
+                parser.index < parser.end &&
+                forwardChar(parser) === Chars.EqualSign
+              ) {
+                forwardChar(parser);
+                return Token.ShiftLeftAssign;
+              }
+              return Token.ShiftLeft;
+            } else if (ch === Chars.EqualSign) {
+              forwardChar(parser);
+              return Token.LessThanOrEqual;
+            }
+          }
+          return Token.LessThan;
         }
 
         // `=`, `==`, `===`, `=>`
