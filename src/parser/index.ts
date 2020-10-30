@@ -1407,6 +1407,43 @@ const parseForStatement = (
   });
 };
 
+const parseWhileStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.WhileStatement => {
+  consume(parser, Token.WhileKeyword);
+  consume(parser, Token.LeftParen);
+
+  const test = parseSequenceExpression(parser, context);
+  consume(parser, Token.RightParen);
+  const body = parseStatement(parser, context);
+
+  return wrapNode(parser, context, {
+    type: 'WhileStatement',
+    test,
+    body,
+  });
+};
+
+const parseDoWhileStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.DoWhileStatement => {
+  consume(parser, Token.DoKeyword);
+  const body = parseStatement(parser, context);
+  consume(parser, Token.WhileKeyword);
+  consume(parser, Token.LeftParen);
+  const test = parseSequenceExpression(parser, context);
+  consume(parser, Token.RightParen);
+  consumeOpt(parser, Token.Semicolon);
+
+  return wrapNode(parser, context, {
+    type: 'DoWhileStatement',
+    test,
+    body,
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   context: Context,
@@ -1480,6 +1517,11 @@ const parseStatement = (
     case Token.ForKeyword: {
       return parseForStatement(parser, context);
     }
+    case Token.WhileKeyword:
+      return parseWhileStatement(parser, context);
+
+    case Token.DoKeyword:
+      return parseDoWhileStatement(parser, context);
 
     case Token.FunctionKeyword:
     case Token.ClassKeyword: {
@@ -1671,7 +1713,7 @@ const parseStatementListItem = (
     case Token.ClassKeyword:
       return parseClassDeclaration(parser, context);
 
-    //    Statement
+    // Statement
     default: {
       return parseStatement(parser, context);
     }

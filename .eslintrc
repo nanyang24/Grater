@@ -53,6 +53,7 @@
     "no-restricted-syntax": 0,
     "no-useless-escape": 0,
     "no-throw-literal": 0,
+    "no-console": 1,
     "no-use-before-define": ["error", { "variables": false }],
     "max-len": [
       "error",
