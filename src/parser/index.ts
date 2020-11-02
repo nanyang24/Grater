@@ -187,9 +187,9 @@ const parseObjectLiteral = (parser: IParserState, context: Context) => {
   // PropertyDefinition[Yield, Await] :
   //    IdentifierReference[?Yield, ?Await]
   //    CoverInitializedName[?Yield, ?Await]
-  //    PropertyName[?Yield, ?Await] : AssignmentExpression[+In, ?Yield, ?Await]
+  //    PropertyName[?Yield, ?Await] : AssignmentExpression
   //    MethodDefinition[?Yield, ?Await]
-  //    ... AssignmentExpression[+In, ?Yield, ?Await]
+  //    ... AssignmentExpression
   // PropertyName[Yield, Await] :
   //    LiteralPropertyName
   //    ComputedPropertyName[?Yield, ?Await]
@@ -198,10 +198,10 @@ const parseObjectLiteral = (parser: IParserState, context: Context) => {
   //    StringLiteral
   //    NumericLiteral
   // ComputedPropertyName[Yield, Await] :
-  //    [ AssignmentExpression[+In, ?Yield, ?Await] ]
+  //    [ AssignmentExpression ]
   // CoverInitializedName[Yield, Await] :
   // https://stackoverflow.com/questions/57583695/what-is-coverinitializednameyield-in-ecma-2015-syntax-grammer
-  //    IdentifierReference[?Yield, ?Await] Initializer[+In, ?Yield, ?Await]
+  //    IdentifierReference[?Yield, ?Await] Initializer
   // Initializer[In, Yield, Await] :
   //    = AssignmentExpression[?In, ?Yield, ?Await]
   return parseObjectExpression(parser, context);
@@ -285,9 +285,9 @@ const parseArrayLiteral = (parser: IParserState, context: Context) => {
       [ ElementList[?Yield, ?Await] , Elisionopt ]
 
     ElementList[Yield, Await] :
-      Elisionopt AssignmentExpression[+In, ?Yield, ?Await]
+      Elisionopt AssignmentExpression
       Elisionopt SpreadElement[?Yield, ?Await]
-      ElementList[?Yield, ?Await] , Elisionopt AssignmentExpression[+In, ?Yield, ?Await]
+      ElementList[?Yield, ?Await] , Elisionopt AssignmentExpression
       ElementList[?Yield, ?Await] , Elisionopt SpreadElement[?Yield, ?Await]
 
     Elision :
@@ -295,7 +295,7 @@ const parseArrayLiteral = (parser: IParserState, context: Context) => {
       Elision ,
 
     SpreadElement[Yield, Await] :
-      ... AssignmentExpression[+In, ?Yield, ?Await]
+      ... AssignmentExpression
   */
 
   return parseArrayExpression(parser, context);
@@ -369,7 +369,7 @@ export const parseFormalParameters = (
   //    BindingElement[?Yield, ?Await]
   // BindingElement[Yield, Await]:
   //    SingleNameBinding[?Yield, ?Await]
-  //    BindingPattern[?Yield, ?Await]  Initializer[+In, ?Yield, ?Await]opt
+  //    BindingPattern[?Yield, ?Await]  Initializeropt
 
   const params: ESTree.Parameter[] = [];
 
@@ -496,7 +496,7 @@ const parseUnaryExpression = (parser: IParserState, context: Context) => {
 //     RelationalExpression[?In, ?Yield, ?Await]<=ShiftExpression[?Yield, ?Await]
 //     RelationalExpression[?In, ?Yield, ?Await]>=ShiftExpression[?Yield, ?Await]
 //     RelationalExpression[?In, ?Yield, ?Await]instanceofShiftExpression[?Yield, ?Await]
-//     [+In]RelationalExpression[+In, ?Yield, ?Await]inShiftExpression[?Yield, ?Await]
+//     [+In]RelationalExpressioninShiftExpression[?Yield, ?Await]
 
 // EqualityExpression[In, Yield, Await]:
 //     RelationalExpression[?In, ?Yield, ?Await]
@@ -1014,9 +1014,9 @@ export const parseBindingProperty = (
   //    PropertyName[?Yield, ?Await]:BindingElement[?Yield, ?Await]
   // BindingElement[Yield, Await]:
   //    SingleNameBinding[?Yield, ?Await]
-  //    BindingPattern[?Yield, ?Await]Initializer[+In, ?Yield, ?Await]opt
+  //    BindingPattern[?Yield, ?Await]Initializeropt
   // SingleNameBinding[Yield, Await]:
-  //    BindingIdentifier[?Yield, ?Await]Initializer[+In, ?Yield, ?Await]opt
+  //    BindingIdentifier[?Yield, ?Await]Initializeropt
 
   let key;
   let value;
@@ -1155,10 +1155,10 @@ const parseBlockStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.BlockStatement => {
-  // BlockStatement[Yield, Await, Return]:
-  //    Block[?Yield, ?Await, ?Return]
-  // Block[Yield, Await, Return]:
-  //    {StatementList[?Yield, ?Await, ?Return]opt}
+  // BlockStatement:
+  //    Block
+  // Block:
+  //    {StatementListopt}
 
   const body: ESTree.Statement[] = [];
   consumeOpt(parser, Token.LeftBrace);
@@ -1444,6 +1444,89 @@ const parseDoWhileStatement = (
   });
 };
 
+const parseClause = (
+  parser: IParserState,
+  context: Context,
+  hasDefaultKey: {
+    value: boolean;
+  },
+): ESTree.SwitchCase => {
+  let test: ESTree.Expression | null = null;
+  const consequent: ESTree.Statement[] = [];
+  if (consumeOpt(parser, Token.CaseKeyword)) {
+    test = parseSequenceExpression(parser, context);
+  } else {
+    consume(parser, Token.DefaultKeyword);
+    if (hasDefaultKey.value) {
+      throw 'More than one default clause in switch statement';
+    }
+    hasDefaultKey.value = true;
+  }
+
+  consume(parser, Token.Colon);
+
+  while (
+    parser.token !== Token.RightBrace &&
+    parser.token !== Token.CaseKeyword &&
+    parser.token !== Token.DefaultKeyword
+  ) {
+    consequent.push(parseStatementListItem(parser, context));
+  }
+
+  return wrapNode(parser, context, {
+    type: 'SwitchCase',
+    test,
+    consequent,
+  });
+};
+
+const parseCaseBlock = (
+  parser: IParserState,
+  context: Context,
+): ESTree.SwitchCase[] => {
+  const clause = [];
+  const hasDefaultKey = { value: false };
+
+  while (parser.token !== Token.RightBrace) {
+    clause.push(parseClause(parser, context, hasDefaultKey));
+  }
+
+  return clause;
+};
+
+const parseSwitchStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.SwitchStatement => {
+  // SwitchStatement:
+  //    switch ( Expression ) CaseBlock
+  // CaseBlock:
+  //    { CaseClausesopt? }
+  //    { CaseClausesopt? DefaultClause CaseClausesopt? }
+  // CaseClauses:
+  //    CaseClause
+  //    CaseClauses CaseClause
+  // CaseClause:
+  //    case Expression : StatementList?
+  // DefaultClause:
+  //    default : StatementList?
+
+  consume(parser, Token.SwitchKeyword);
+  consume(parser, Token.LeftParen);
+  const discriminant = parseSequenceExpression(parser, context);
+  consume(parser, Token.RightParen);
+  consume(parser, Token.LeftBrace);
+
+  const cases = parseCaseBlock(parser, context);
+  consume(parser, Token.RightBrace);
+
+  return wrapNode(parser, context, {
+    type: 'SwitchStatement',
+    discriminant,
+    cases,
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   context: Context,
@@ -1522,6 +1605,10 @@ const parseStatement = (
 
     case Token.DoKeyword:
       return parseDoWhileStatement(parser, context);
+
+    case Token.SwitchKeyword: {
+      return parseSwitchStatement(parser, context);
+    }
 
     case Token.FunctionKeyword:
     case Token.ClassKeyword: {
