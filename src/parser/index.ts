@@ -1552,6 +1552,29 @@ const parseContinueStatement = (
   });
 };
 
+const parseBreakStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.BreakStatement => {
+  consume(parser, Token.BreakKeyword);
+
+  const label: ESTree.Identifier | null = null;
+
+  // TODO: Label
+  if (
+    !parser.lineTerminatorBeforeNextToken &&
+    parser.token & Token.IsIdentifier
+  ) {
+  }
+
+  consumeSemicolon(parser);
+
+  return wrapNode(parser, context, {
+    type: 'BreakStatement',
+    label,
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   context: Context,
@@ -1637,6 +1660,10 @@ const parseStatement = (
 
     case Token.ContinueKeyword: {
       return parseContinueStatement(parser, context);
+    }
+
+    case Token.BreakKeyword: {
+      return parseBreakStatement(parser, context);
     }
 
     case Token.FunctionKeyword:
