@@ -1575,6 +1575,28 @@ const parseBreakStatement = (
   });
 };
 
+const parseWithStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.WithStatement => {
+  if (context & Context.Strict) {
+    throw 'Strict mode code may not include a with statement';
+  }
+
+  consume(parser, Token.WithKeyword);
+  consume(parser, Token.LeftParen);
+  const object = parseSequenceExpression(parser, context);
+  consume(parser, Token.RightParen);
+
+  const body = parseStatement(parser, context);
+
+  return wrapNode(parser, context, {
+    type: 'WithStatement',
+    object,
+    body,
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   context: Context,
@@ -1664,6 +1686,10 @@ const parseStatement = (
 
     case Token.BreakKeyword: {
       return parseBreakStatement(parser, context);
+    }
+
+    case Token.WithKeyword: {
+      return parseWithStatement(parser, context);
     }
 
     case Token.FunctionKeyword:
