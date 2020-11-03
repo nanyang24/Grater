@@ -1357,7 +1357,7 @@ const parseForStatement = (
       type: 'ForInStatement',
       left: init,
       right,
-      body: parseStatement(parser, context),
+      body: parseStatement(parser, context | Context.InIteration),
     });
   }
 
@@ -1375,7 +1375,7 @@ const parseForStatement = (
       type: 'ForOfStatement',
       left: init,
       right,
-      body: parseStatement(parser, context),
+      body: parseStatement(parser, context | Context.InIteration),
       await: false,
     });
   }
@@ -1403,7 +1403,7 @@ const parseForStatement = (
     init,
     test,
     update,
-    body: parseStatement(parser, context),
+    body: parseStatement(parser, context | Context.InIteration),
   });
 };
 
@@ -1416,7 +1416,7 @@ const parseWhileStatement = (
 
   const test = parseSequenceExpression(parser, context);
   consume(parser, Token.RightParen);
-  const body = parseStatement(parser, context);
+  const body = parseStatement(parser, context | Context.InIteration);
 
   return wrapNode(parser, context, {
     type: 'WhileStatement',
@@ -1430,7 +1430,7 @@ const parseDoWhileStatement = (
   context: Context,
 ): ESTree.DoWhileStatement => {
   consume(parser, Token.DoKeyword);
-  const body = parseStatement(parser, context);
+  const body = parseStatement(parser, context | Context.InIteration);
   consume(parser, Token.WhileKeyword);
   consume(parser, Token.LeftParen);
   const test = parseSequenceExpression(parser, context);
@@ -1527,6 +1527,31 @@ const parseSwitchStatement = (
   });
 };
 
+const parseContinueStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.ContinueStatement => {
+  if (!(context & Context.InIteration)) throw 'Illegal continue statement';
+
+  consume(parser, Token.ContinueKeyword);
+
+  const label: ESTree.Identifier | null = null;
+
+  // TODO: Label
+  if (
+    !parser.lineTerminatorBeforeNextToken &&
+    parser.token & Token.IsIdentifier
+  ) {
+  }
+
+  consumeSemicolon(parser);
+
+  return wrapNode(parser, context, {
+    type: 'ContinueStatement',
+    label,
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   context: Context,
@@ -1608,6 +1633,10 @@ const parseStatement = (
 
     case Token.SwitchKeyword: {
       return parseSwitchStatement(parser, context);
+    }
+
+    case Token.ContinueKeyword: {
+      return parseContinueStatement(parser, context);
     }
 
     case Token.FunctionKeyword:
