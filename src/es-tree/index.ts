@@ -246,7 +246,7 @@ export interface TryStatement extends Node {
 
 export interface CatchClause extends Node {
   type: 'CatchClause';
-  param: Pattern;
+  param: Pattern | null;
   body: BlockStatement;
 }
 

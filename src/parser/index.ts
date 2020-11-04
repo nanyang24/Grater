@@ -1597,6 +1597,48 @@ const parseWithStatement = (
   });
 };
 
+const parseCatchClause = (
+  parser: IParserState,
+  context: Context,
+): ESTree.CatchClause => {
+  let param: ESTree.Pattern | null = null;
+
+  if (consumeOpt(parser, Token.LeftParen)) {
+    param = parseBindingPatternOrIdentifier(parser, context);
+    consume(parser, Token.RightParen);
+  }
+
+  const body = parseBlockStatement(parser, context);
+
+  return wrapNode(parser, context, {
+    type: 'CatchClause',
+    param,
+    body,
+  });
+};
+
+const parseTryStatement = (
+  parser: IParserState,
+  context: Context,
+): ESTree.TryStatement => {
+  consume(parser, Token.TryKeyword);
+
+  const block = parseBlockStatement(parser, context);
+  const handler = consumeOpt(parser, Token.CatchKeyword)
+    ? parseCatchClause(parser, context)
+    : null;
+  const finalizer = consumeOpt(parser, Token.FinallyKeyword)
+    ? parseBlockStatement(parser, context)
+    : null;
+
+  return wrapNode(parser, context, {
+    type: 'TryStatement',
+    block,
+    handler,
+    finalizer,
+  });
+};
+
 const parseHigherExpression = (
   parser: IParserState,
   context: Context,
@@ -1691,6 +1733,9 @@ const parseStatement = (
     case Token.WithKeyword: {
       return parseWithStatement(parser, context);
     }
+
+    case Token.TryKeyword:
+      return parseTryStatement(parser, context);
 
     case Token.FunctionKeyword:
     case Token.ClassKeyword: {
