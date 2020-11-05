@@ -51,3 +51,13 @@ export const enum Context {
   InIteration = 1 << 5, // while/for-in/for-of/for
   Return = 1 << 6,
 }
+
+export interface Options {
+  impliedStrict?: boolean;
+
+  // TODO
+  loc?: boolean;
+  module?: boolean;
+  jsx?: boolean;
+  ts?: boolean;
+}

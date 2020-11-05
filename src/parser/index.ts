@@ -12,7 +12,11 @@ import {
 // typings
 import * as ESTree from '../es-tree';
 import {
-  IParserState, PropertyKind, Context, PropertyKindMap,
+  IParserState,
+  PropertyKind,
+  Context,
+  Options,
+  PropertyKindMap,
 } from './type';
 
 const wrapNode = <T extends any>(
@@ -1960,7 +1964,16 @@ const parseStatementList = (parser: IParserState, context: Context) => {
   return statements;
 };
 
-const parserMachine = (source: string, context: Context): ESTree.Program => {
+const parserMachine = (
+  source: string,
+  context: Context,
+  options?: Options,
+): ESTree.Program => {
+  if (options != null) {
+    // Add to Context
+    if (options.impliedStrict) context |= Context.Strict;
+  }
+
   // Initialize parser state
   const parserState: IParserState = createParserState(source);
   const sourceType: ESTree.SourceType = 'script';
@@ -1978,7 +1991,7 @@ const parserMachine = (source: string, context: Context): ESTree.Program => {
   return nodeTree;
 };
 
-export { parserMachine };
+export default parserMachine;
 
 /**
 
