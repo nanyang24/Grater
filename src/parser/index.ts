@@ -832,14 +832,23 @@ const parseConditionalExpression = (
   parser: IParserState,
   context: Context,
   left: ESTree.Expression,
-) => {
+): ESTree.ConditionalExpression => {
   const node = parseBinaryExpression(parser, context, left, /* minPrec */ 4);
 
   if (parser.token !== Token.QuestionMark) return node;
 
-  // TODO
+  consume(parser, Token.QuestionMark);
+  const consequent = parseExpression(parser, context);
+  consume(parser, Token.Colon);
+  const alternate = parseExpression(parser, context);
+  parser.assignable = false;
 
-  return left;
+  return wrapNode(parser, context, {
+    type: 'ConditionalExpression',
+    test: node,
+    consequent,
+    alternate,
+  });
 };
 
 /**

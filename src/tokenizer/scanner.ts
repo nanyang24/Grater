@@ -42,6 +42,31 @@ export function scan(parser: IParserState): Token {
           break;
         }
 
+        // `?`, `??`, `?.`
+        case Token.QuestionMark: {
+          let ch = forwardChar(parser);
+          const { source } = parser;
+
+          if (ch === Chars.Period) {
+            const index = parser.index++;
+            if (index < parser.end) {
+              ch = source.charCodeAt(index);
+              if (!isDecimalDigit(char)) {
+                forwardChar(parser);
+                return Token.QuestionMarkPeriod;
+              }
+            }
+          }
+
+          if (ch === Chars.QuestionMark) {
+            forwardChar(parser);
+
+            return Token.Nullish;
+          }
+
+          return Token.QuestionMark;
+        }
+
         // `<`, `<=`, `<<`
         case Token.LessThan: {
           const ch = forwardChar(parser);
