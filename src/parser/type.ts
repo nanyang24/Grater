@@ -49,4 +49,5 @@ export const enum Context {
   Strict = 1 << 3,
   Global = 1 << 4,
   InIteration = 1 << 5, // while/for-in/for-of/for
+  Return = 1 << 6,
 }

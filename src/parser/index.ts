@@ -3,10 +3,10 @@ import { Token } from '../tokenizer/token';
 import { nextToken } from '../tokenizer/scanner';
 import { KeywordTokenTable } from '../tokenizer/utils';
 import {
-  consumeSemicolon,
-  consumeOpt,
-  mapToAssignment,
   consume,
+  consumeOpt,
+  consumeSemicolon,
+  mapToAssignment,
 } from './utils';
 
 // typings
@@ -412,6 +412,8 @@ export const parseFunctionBody = (
   consumeOpt(parser, Token.LeftBrace);
 
   const body: ESTree.Statement[] = [];
+
+  context = (context | Context.Return) ^ Context.Global;
 
   while (parser.token !== Token.RightBrace) {
     body.push(parseStatementListItem(parser, context));
@@ -1206,7 +1208,9 @@ export const parseReturnStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.ReturnStatement => {
-  // TODO Global return error
+  if (!(context & Context.Return)) {
+    throw 'Illegal return statement';
+  }
 
   nextToken(parser);
 
