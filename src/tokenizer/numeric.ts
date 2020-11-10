@@ -198,6 +198,23 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
     }
   }
 
+  if (letterCaseInsensitive(char) === Chars.LowerE) {
+    const end = parser.index;
+    char = forwardChar(parser);
+
+    if (CharTypes[char] & CharSymbol.Exponent) char = forwardChar(parser);
+
+    const { index } = parser;
+
+    if ((CharTypes[char] & CharSymbol.Decimal) < 1) {
+      throw Error;
+    }
+
+    value +=
+      parser.source.substring(end, index) +
+      parseDecimalWithSeparator(parser, char);
+  }
+
   parser.tokenValue = parseFloat(value);
 
   return Token.NumericLiteral;

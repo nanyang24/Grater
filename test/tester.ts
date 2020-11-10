@@ -1,4 +1,6 @@
 import parserMachine from '../src/grater';
+import createParserState from '../src/parser/createParserState';
+import { scan } from '../src/tokenizer/scanner';
 import { Context } from '../src/parser/type';
 import * as t from 'assert';
 
@@ -24,3 +26,10 @@ export const fail = (name: string, invalid: [string, Context][]) => {
     }
   });
 };
+
+export const failViaScan = (name: string, source: string) => {
+  it(name, () => {
+    const state = createParserState(source);
+    t.throws(() => scan(state));
+  });
+}

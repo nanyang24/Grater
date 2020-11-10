@@ -1,6 +1,6 @@
 import * as assert from 'assert';
 
-import { fail } from '../tester'
+import { fail, failViaScan } from '../tester'
 import { Token } from '../../src/tokenizer/token';
 import { Context } from '../../src/parser/type'
 import createParserState from '../../src/parser/createParserState';
@@ -12,14 +12,6 @@ function process(
 ): [Token, string, string][] {
   const [unicode, character] = tokenList;
   return unicode.map((item, index) => [tokenType, item, character[index]]);
-}
-
-function failViaScan(name: string, source: string) {
-  it(name, () => {
-    const state = createParserState(source);
-    console.log(state)
-    assert.throws(() => scan(state));
-  });
 }
 
 // ENGLISH CAPITAL ALPHABET
