@@ -50,10 +50,12 @@ export const enum Context {
   Global = 1 << 4,
   InIteration = 1 << 5, // while/for-in/for-of/for
   Return = 1 << 6,
+  OptionsDisableWebCompat = 1 << 7,
 }
 
 export interface Options {
   impliedStrict?: boolean;
+  disableWebCompat?: boolean;
 
   // TODO
   loc?: boolean;

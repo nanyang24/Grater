@@ -8,6 +8,7 @@ import {
   consumeSemicolon,
   mapToAssignment,
 } from './utils';
+import { report, Errors } from '../error-handler';
 
 // typings
 import * as ESTree from '../es-tree';
@@ -307,8 +308,12 @@ const parseArrayLiteral = (parser: IParserState, context: Context) => {
 
 export const validateFunctionName = (parser: IParserState): any => {
   const { token } = parser;
-  if ((token & Token.Keyword) === Token.Keyword) {
-    throw Error;
+  if (token & Token.Keyword) {
+    report(
+      parser,
+      Errors.UnexpectedToken,
+      KeywordTokenTable[parser.token & Token.Musk],
+    );
   }
 };
 
@@ -594,7 +599,7 @@ const parsePrefixUpdateExpression = (
   const argument = parseLeftHandSideExpression(parser, context);
 
   if (!parser.assignable) {
-    throw Error('lhs');
+    report(parser, Errors.InvalidLHSPreOp);
   }
 
   parser.assignable = false;
@@ -607,7 +612,7 @@ const parsePrefixUpdateExpression = (
   });
 };
 
-const parseSuffixUpdateExpression = (
+const parsePostfixUpdateExpression = (
   parser: IParserState,
   context: Context,
   operand: ESTree.Expression,
@@ -615,7 +620,7 @@ const parseSuffixUpdateExpression = (
   if (parser.lineTerminatorBeforeNextToken) return operand;
 
   if (!parser.assignable) {
-    throw Error('lhs');
+    report(parser, Errors.InvalidLHSPostOp);
   }
 
   parser.assignable = false;
@@ -665,7 +670,7 @@ const parseNewExpression = (parser: IParserState, context: Context) => {
       parser.assignable = false;
       return parseMetaProperty(parser, context, meta);
     }
-    throw 'Invalid New Target';
+    report(parser, Errors.InvalidNewTarget);
   }
 
   const callee = parseMemberExpression(
@@ -692,7 +697,7 @@ const parseSuperCallOrSuperProperty = (
 
   switch (parser.token) {
     case Token.LeftParen: {
-      if (!(context & Context.SuperCall)) throw 'no superclass';
+      if (!(context & Context.SuperCall)) report(parser, Errors.NoSuperCall);
       parser.assignable = false;
       break;
     }
@@ -702,6 +707,7 @@ const parseSuperCallOrSuperProperty = (
       break;
     }
     default:
+      report(parser, Errors.UnexpectedToken, 'super');
   }
 
   return wrapNode(parser, context, { type: 'Super' });
@@ -781,7 +787,11 @@ const parsePrimaryExpression = (
       return parseFunctionExpression(parser, context);
 
     default: {
-      throw KeywordTokenTable[parser.token & Token.Musk];
+      report(
+        parser,
+        Errors.UnexpectedToken,
+        KeywordTokenTable[parser.token & Token.Musk],
+      );
     }
   }
 };
@@ -806,7 +816,7 @@ const parseAssignmentExpression = (
 ): ESTree.AssignmentExpression | ESTree.Expression => {
   if (parser.token & Token.IsAssignPart) {
     if (!parser.assignable) {
-      throw Error('lhs');
+      report(parser, Errors.InvalidLHS);
     }
     parser.assignable = false;
     const operator = KeywordTokenTable[parser.token & Token.Musk];
@@ -875,7 +885,7 @@ const parseMemberExpression = (
       // This is not part of the MemberExpression specification, but let's simplify the implementation here
       case Token.Decrement:
       case Token.Increment:
-        return parseSuffixUpdateExpression(parser, context, expr);
+        return parsePostfixUpdateExpression(parser, context, expr);
 
       /* Property */
       case Token.Period:
@@ -1005,11 +1015,11 @@ const parseBindingIdentifier = (
   // 4. yield
 
   if ((token & Token.IsKeyword) === Token.IsKeyword) {
-    throw Error();
+    report(parser, Errors.ExpectedBindingIdent);
   }
 
   if ((token & (Token.IsIdentifier | Token.Keyword)) === 0) {
-    throw Error();
+    report(parser, Errors.ExpectedBindingIdent);
   }
 
   nextToken(parser);
@@ -1213,7 +1223,7 @@ export const parseReturnStatement = (
   context: Context,
 ): ESTree.ReturnStatement => {
   if (!(context & Context.Return)) {
-    throw 'Illegal return statement';
+    report(parser, Errors.IllegalReturn);
   }
 
   nextToken(parser);
@@ -1252,7 +1262,7 @@ export const parseThrowStatement = (
 
   // Can't break the line
   if (parser.lineTerminatorBeforeNextToken) {
-    throw Error;
+    report(parser, Errors.NewlineAfterThrow);
   }
 
   const argument: ESTree.Expression = parseExpression(parser, context);
@@ -1362,7 +1372,7 @@ const parseForStatement = (
 
   if (consumeOpt(parser, Token.InKeyword)) {
     if (!parser.assignable) {
-      throw 'can not assign to for-loop';
+      report(parser, Errors.CantAssignToForLoop, 'in');
     }
 
     mapToAssignment(init);
@@ -1380,7 +1390,7 @@ const parseForStatement = (
 
   if (consumeOpt(parser, Token.OfKeyword)) {
     if (!parser.assignable) {
-      throw 'can not assign to for-loop';
+      report(parser, Errors.CantAssignToForLoop, 'of');
     }
 
     mapToAssignment(init);
@@ -1475,7 +1485,7 @@ const parseClause = (
   } else {
     consume(parser, Token.DefaultKeyword);
     if (hasDefaultKey.value) {
-      throw 'More than one default clause in switch statement';
+      report(parser, Errors.MultipleDefaultsInSwitch);
     }
     hasDefaultKey.value = true;
   }
@@ -1548,7 +1558,7 @@ const parseContinueStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.ContinueStatement => {
-  if (!(context & Context.InIteration)) throw 'Illegal continue statement';
+  if (!(context & Context.InIteration)) report(parser, Errors.IllegalContinue);
 
   consume(parser, Token.ContinueKeyword);
 
@@ -1597,7 +1607,7 @@ const parseWithStatement = (
   context: Context,
 ): ESTree.WithStatement => {
   if (context & Context.Strict) {
-    throw 'Strict mode code may not include a with statement';
+    report(parser, Errors.StrictWith);
   }
 
   consume(parser, Token.WithKeyword);
@@ -1754,9 +1764,20 @@ const parseStatement = (
     case Token.TryKeyword:
       return parseTryStatement(parser, context);
 
-    case Token.FunctionKeyword:
+    case Token.FunctionKeyword: {
+      const specificError =
+        context & Context.Strict
+          ? Errors.StrictFunction
+          : context & Context.OptionsDisableWebCompat
+            ? Errors.WebCompatFunction
+            : Errors.SloppyFunction;
+
+      report(parser, specificError);
+      return parseFunctionDeclaration(parser, context);
+    }
     case Token.ClassKeyword: {
-      throw Error;
+      report(parser, Errors.ClassForbiddenAsStatement);
+      return parseClassDeclaration(parser, context);
     }
 
     default: {
@@ -1786,7 +1807,7 @@ const parseFunctionDeclaration = (
 
     id = parseIdentifier(parser, context);
   } else {
-    throw Error('Missing Name of Function');
+    report(parser, Errors.MissingFunctionName);
   }
 
   context |= Context.NewTarget;
@@ -1905,7 +1926,7 @@ const parseClassDeclaration = (
     // eslint-disable-next-line no-constant-condition
   } else if (true) {
     // TODO: context: Export Default
-    throw Error('missingClassName');
+    report(parser, Errors.MissingClassName);
   }
 
   if (consumeOpt(parser, Token.ExtendsKeyword)) {
@@ -1972,6 +1993,7 @@ const parserMachine = (
   if (options != null) {
     // Add to Context
     if (options.impliedStrict) context |= Context.Strict;
+    if (options.disableWebCompat) context |= Context.OptionsDisableWebCompat;
   }
 
   // Initialize parser state

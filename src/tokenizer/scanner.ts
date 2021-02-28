@@ -322,7 +322,7 @@ export function scan(parser: IParserState): Token {
         }
       }
     } else {
-      // do something
+      // TODO
     }
   }
   return Token.EOF;

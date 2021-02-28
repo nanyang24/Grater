@@ -2,6 +2,7 @@ import { IParserState } from '../parser/type';
 import { Token } from './token';
 import { forwardChar, betterFromCharCode, toHex } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
+import { report, Errors } from '../error-handler';
 
 // Deliberately negative
 export const enum Escape {
@@ -12,22 +13,26 @@ export const enum Escape {
   OutOfRange = -5,
 }
 
-function handleError(code: Escape) {
+function handleErrors(code: Escape, state: IParserState) {
   switch (code) {
     case Escape.Empty:
       return;
 
     case Escape.StrictOctal:
-      throw Error;
+      report(state, Errors.StrictOctalEscape);
+      break;
 
     case Escape.EightOrNine:
-      throw Error;
+      report(state, Errors.InvalidEightAndNine);
+      break;
 
     case Escape.InvalidHex:
-      throw Error;
+      report(state, Errors.InvalidHexEscapeSequence);
+      break;
 
     case Escape.OutOfRange:
-      throw Error;
+      report(state, Errors.UnicodeOverflow);
+      break;
   }
 }
 
@@ -236,16 +241,16 @@ const scanString = (parser: IParserState, quote: number): any => {
         if (code >= 0) {
           sumString += betterFromCharCode(code);
         } else {
-          handleError(code);
+          handleErrors(code, parser);
         }
       }
 
       starSign = parser.index + 1;
     }
-    if (parser.index >= parser.end) throw Error('Unterminated string');
+    if (parser.index >= parser.end) report(parser, Errors.UnterminatedString);
 
     curChar = forwardChar(parser);
   }
 
-  throw Error('Unterminated string');
+  report(parser, Errors.UnterminatedString);
 };

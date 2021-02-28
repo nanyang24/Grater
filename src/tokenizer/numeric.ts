@@ -2,6 +2,7 @@ import { IParserState } from '../parser/type';
 import { Token } from './token';
 import { forwardChar, toHex, letterCaseInsensitive } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
+import { report, reportWithPosition, Errors } from '../error-handler';
 
 /**
  * Support for Numeric Separators
@@ -30,7 +31,12 @@ const parseDecimalWithSeparator = (
       char = forwardChar(parser);
       // Cannot contain two consecutive underscores
       if (char === Chars.Underscore) {
-        throw Error;
+        reportWithPosition(
+          parser.index,
+          parser.line,
+          parser.index + 1 /* skip `_` */,
+          Errors.ContinuousNumericSeparator,
+        );
       }
       separatorError = true;
       // skip '_'
@@ -44,7 +50,12 @@ const parseDecimalWithSeparator = (
   }
 
   if (separatorError) {
-    throw Error;
+    reportWithPosition(
+      parser.index,
+      parser.line,
+      parser.index + 1 /* skip `_` */,
+      Errors.TrailingNumericSeparator,
+    );
   }
 
   return value + parser.source.substring(start, parser.index);
@@ -90,7 +101,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
         while (CharTypes[char] & (CharSymbol.Hex | CharSymbol.Underscore)) {
           if (char === Chars.Underscore) {
             if (!allowSeparator) {
-              throw Error;
+              report(parser, Errors.ContinuousNumericSeparator);
             }
             allowSeparator = false;
             char = forwardChar(parser);
@@ -103,7 +114,12 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
           digits++;
         }
         if (digits < 1 || !allowSeparator) {
-          throw Error;
+          report(
+            parser,
+            digits < 1
+              ? Errors.MissingHexDigits
+              : Errors.TrailingNumericSeparator,
+          );
         }
       }
 
@@ -115,7 +131,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
         while (CharTypes[char] & (CharSymbol.Binary | CharSymbol.Underscore)) {
           if (char === Chars.Underscore) {
             if (!allowSeparator) {
-              throw Error;
+              report(parser, Errors.ContinuousNumericSeparator);
             }
             allowSeparator = false;
             char = forwardChar(parser);
@@ -128,7 +144,10 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
           digits++;
         }
         if (digits < 1 || !allowSeparator) {
-          throw Error;
+          report(
+            parser,
+            digits < 1 ? Errors.Unexpected : Errors.TrailingNumericSeparator,
+          );
         }
       }
 
@@ -140,7 +159,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
         while (CharTypes[char] & (CharSymbol.Octal | CharSymbol.Underscore)) {
           if (char === Chars.Underscore) {
             if (!allowSeparator) {
-              throw Error;
+              report(parser, Errors.ContinuousNumericSeparator);
             }
             allowSeparator = false;
             char = forwardChar(parser);
@@ -153,7 +172,10 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
           digits++;
         }
         if (digits < 1 || !allowSeparator) {
-          throw Error;
+          report(
+            parser,
+            digits < 1 ? Errors.Unexpected : Errors.TrailingNumericSeparator,
+          );
         }
       }
 
@@ -181,7 +203,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
     if (type & NumberKind.DecimalNumberKind) {
       if (char === Chars.Period) {
         if (forwardChar(parser) === Chars.Underscore) {
-          throw Error;
+          report(parser, Errors.Unexpected);
         }
         value += '.' + parseDecimalWithSeparator(parser, parser.currentChar);
         char = parser.currentChar;
@@ -194,7 +216,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
     char = parser.currentChar;
     // Syntax Error
     if (char === Chars.LowerN) {
-      throw Error;
+      report(parser, Errors.InvalidBigInt);
     }
   }
 
@@ -207,7 +229,7 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
     const { index } = parser;
 
     if ((CharTypes[char] & CharSymbol.Decimal) < 1) {
-      throw Error;
+      report(parser, Errors.MissingExponent);
     }
 
     value +=

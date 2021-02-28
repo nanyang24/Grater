@@ -22,7 +22,8 @@
     "lint-fix": "eslint . --ext .ts --fix",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
     "test": "mocha test/**/*.ts",
-    "test262-parser-tests": "mocha \"test/test262-parser-tests/*.ts\""
+    "test262-parser-tests": "mocha \"test/test262-parser-tests/*.ts\"",
+    "test-single": "mocha"
   },
   "husky": {
     "hooks": {
