@@ -1,4 +1,4 @@
-import { IParserState } from '../parser/type';
+import { Context, IParserState } from '../parser/type';
 import { scanIdentifier } from './identifier';
 import { scanString } from './string';
 import { scanNumber } from './numeric';
@@ -6,7 +6,7 @@ import { Token } from './token';
 import { TokenPickUpFromASCII, forwardChar, isDecimalDigit } from './utils';
 import { Chars } from './charClassifier';
 
-export function scan(parser: IParserState): Token {
+export function scan(parser: IParserState, context: Context): Token {
   const lastIsCR = false;
 
   // scan the whole stream
@@ -284,20 +284,20 @@ export function scan(parser: IParserState): Token {
 
         // `'string'`, `"string"`
         case Token.StringLiteral: {
-          return scanString(parser, char);
+          return scanString(parser, context, char);
         }
 
         // .123
         case Token.Period: {
           const nextChar = forwardChar(parser);
           if (isDecimalDigit(nextChar)) {
-            return scanNumber(parser, true);
+            return scanNumber(parser, context, true);
           }
           return Token.Period;
         }
 
         case Token.NumericLiteral: {
-          return scanNumber(parser);
+          return scanNumber(parser, context);
         }
 
         //  Keywords
@@ -328,10 +328,10 @@ export function scan(parser: IParserState): Token {
   return Token.EOF;
 }
 
-export function nextToken(parser: IParserState): void {
+export function nextToken(parser: IParserState, context: Context): void {
   parser.startPos = parser.index;
   parser.startColumn = parser.column;
   parser.startLine = parser.line;
   parser.lineTerminatorBeforeNextToken = false;
-  parser.token = scan(parser);
+  parser.token = scan(parser, context);
 }

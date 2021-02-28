@@ -16,6 +16,7 @@ export enum Token {
   IsBinaryOp = 1 << 17,
   IsLogical = 1 << 18,
   IsPropertyOrCallExpression = 1 << 19,
+  IsFutureReserved = 1 << 20,
 
   /* Precedence for binary operators */
   PrecStart = 8,

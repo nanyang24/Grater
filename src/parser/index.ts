@@ -29,7 +29,7 @@ const wrapNode = <T extends any>(
 };
 
 const parseThisExpression = (parser: IParserState, context: Context) => {
-  nextToken(parser);
+  nextToken(parser, context);
   parser.assignable = false;
   return wrapNode(parser, context, {
     type: 'ThisExpression',
@@ -42,7 +42,7 @@ const parsePrimitiveLiteral = (parser: IParserState, context: Context) => {
   // Maybe a little mental burden
   const value = JSON.parse(tokenValue);
 
-  nextToken(parser);
+  nextToken(parser, context);
   parser.assignable = false;
   return wrapNode(parser, context, {
     type: 'Literal',
@@ -56,7 +56,7 @@ const parseLiteral = (
 ): ESTree.Literal => {
   const { tokenValue } = parser;
 
-  nextToken(parser);
+  nextToken(parser, context);
 
   parser.assignable = false;
 
@@ -72,7 +72,7 @@ const parseIdentifier = (
 ): ESTree.Identifier => {
   const { tokenValue } = parser;
 
-  nextToken(parser);
+  nextToken(parser, context);
 
   return wrapNode(parser, context, {
     type: 'Identifier',
@@ -86,9 +86,9 @@ export function parseComputedPropertyName(
 ): ESTree.Expression {
   // ComputedPropertyName :
   //   [ AssignmentExpression ]
-  nextToken(parser);
+  nextToken(parser, context);
   const key = parseExpression(parser, context);
-  consumeOpt(parser, Token.RightBracket);
+  consumeOpt(parser, context, Token.RightBracket);
   return key;
 }
 
@@ -115,19 +115,19 @@ const parsePropertyDefinition = (
     ) {
       shorthand = true;
       value = { ...key };
-    } else if (consumeOpt(parser, Token.Colon)) {
+    } else if (consumeOpt(parser, context, Token.Colon)) {
       value = parsePrimaryExpression(parser, context);
     }
   } else if (parser.token === Token.LeftBracket) {
     key = parseComputedPropertyName(parser, context);
     kind |= PropertyKind.Generator;
     computed = true;
-    if (consumeOpt(parser, Token.Colon)) {
+    if (consumeOpt(parser, context, Token.Colon)) {
       value = parsePrimaryExpression(parser, context);
     }
   } else if (parser.token & Token.IsStringOrNumber) {
     key = parseLiteral(parser, context);
-    if (consumeOpt(parser, Token.Colon)) {
+    if (consumeOpt(parser, context, Token.Colon)) {
       value = parsePrimaryExpression(parser, context);
     } else {
       throw Error;
@@ -151,7 +151,7 @@ const parseObjectExpression = (
   parser: IParserState,
   context: Context,
 ): ESTree.ObjectExpression => {
-  nextToken(parser);
+  nextToken(parser, context);
 
   const properties: ESTree.Property[] = [];
 
@@ -160,10 +160,10 @@ const parseObjectExpression = (
 
     if (parser.token !== Token.Comma) break;
 
-    nextToken(parser);
+    nextToken(parser, context);
   }
 
-  consumeOpt(parser, Token.RightBrace);
+  consumeOpt(parser, context, Token.RightBrace);
 
   const node = wrapNode(parser, context, {
     type: 'ObjectExpression',
@@ -218,7 +218,7 @@ export const parseAssignmentElement = (
   left: ESTree.ArrayExpression | ESTree.ObjectExpression,
 ): any => {
   const operator = KeywordTokenTable[parser.token & Token.Musk];
-  nextToken(parser);
+  nextToken(parser, context);
 
   mapToAssignment(left);
   const right = parseExpression(parser, context);
@@ -235,7 +235,7 @@ const parseArrayExpression = (
   parser: IParserState,
   context: Context,
 ): ESTree.ArrayExpression => {
-  nextToken(parser);
+  nextToken(parser, context);
 
   const elements: (
     | ESTree.Identifier
@@ -246,7 +246,7 @@ const parseArrayExpression = (
   while (parser.token !== Token.RightBracket) {
     let node: any;
 
-    if (consumeOpt(parser, Token.Comma)) {
+    if (consumeOpt(parser, context, Token.Comma)) {
       elements.push(null);
       continue;
     } else {
@@ -259,12 +259,12 @@ const parseArrayExpression = (
 
     elements.push(node);
 
-    if (consumeOpt(parser, Token.Comma)) {
+    if (consumeOpt(parser, context, Token.Comma)) {
       if (parser.token === Token.RightBracket) break;
     } else break;
   }
 
-  consumeOpt(parser, Token.RightBracket);
+  consumeOpt(parser, context, Token.RightBracket);
 
   const node = wrapNode(parser, context, {
     type: 'ArrayExpression',
@@ -330,7 +330,7 @@ export const parseBindingElement = (
     if (parser.token !== Token.Assign) return node;
   }
 
-  if (consumeOpt(parser, Token.Assign)) {
+  if (consumeOpt(parser, context, Token.Assign)) {
     const right = parseExpression(parser, context);
 
     node = wrapNode(parser, context, {
@@ -345,16 +345,16 @@ export const parseBindingElement = (
 
 const parseArguments = (parser: IParserState, context: Context) => {
   const args = [];
-  consume(parser, Token.LeftParen);
+  consume(parser, context, Token.LeftParen);
 
   while (parser.token !== Token.RightParen) {
     args.push(parseExpression(parser, context));
 
-    if (consumeOpt(parser, Token.Comma)) continue;
+    if (consumeOpt(parser, context, Token.Comma)) continue;
     if (parser.token === Token.RightParen) break;
   }
 
-  consume(parser, Token.RightParen);
+  consume(parser, context, Token.RightParen);
 
   return args;
 };
@@ -382,19 +382,19 @@ export const parseFormalParameters = (
 
   const params: ESTree.Parameter[] = [];
 
-  if (consumeOpt(parser, Token.LeftParen)) {
-    if (consumeOpt(parser, Token.RightParen)) return params;
+  if (consumeOpt(parser, context, Token.LeftParen)) {
+    if (consumeOpt(parser, context, Token.RightParen)) return params;
 
     while (parser.token !== Token.Comma) {
       params.push(parseBindingElement(parser, context));
 
-      if (!consumeOpt(parser, Token.Comma)) break;
+      if (!consumeOpt(parser, context, Token.Comma)) break;
       if (parser.token === Token.RightParen) {
         break;
       }
     }
 
-    consumeOpt(parser, Token.RightParen);
+    consumeOpt(parser, context, Token.RightParen);
   }
 
   return params;
@@ -418,7 +418,7 @@ export const parseFunctionBody = (
   parser: IParserState,
   context: Context,
 ): ESTree.FunctionBody => {
-  consumeOpt(parser, Token.LeftBrace);
+  consumeOpt(parser, context, Token.LeftBrace);
 
   const body: ESTree.Statement[] = [];
 
@@ -428,7 +428,7 @@ export const parseFunctionBody = (
     body.push(parseStatementListItem(parser, context));
   }
 
-  consumeOpt(parser, Token.RightBrace);
+  consumeOpt(parser, context, Token.RightBrace);
 
   return wrapNode(parser, context, {
     type: 'BlockStatement',
@@ -437,7 +437,7 @@ export const parseFunctionBody = (
 };
 
 const parseFunctionExpression = (parser: IParserState, context: Context) => {
-  nextToken(parser);
+  nextToken(parser, context);
 
   // TODO Async Function
   const isAsync = false;
@@ -474,8 +474,21 @@ const parseUnaryExpression = (parser: IParserState, context: Context) => {
   const operator = KeywordTokenTable[
     parser.token & Token.Musk
   ] as ESTree.UnaryOperator;
-  nextToken(parser);
+  nextToken(parser, context);
   const argument = parseLeftHandSideExpression(parser, context);
+
+  // unary expressions on the LHS of **
+  if (parser.token === Token.Exponentiate) {
+    report(parser, Errors.InvalidExponentiationLHS);
+  }
+
+  if ((context & Context.Strict) === Context.Strict) {
+    // Normal variables in JavaScript can't be deleted using the delete operator.
+    // In strict mode, an attempt to delete a variable will throw an error and is not allowed.
+    if (argument.type === 'Identifier') {
+      report(parser, Errors.StrictDelete);
+    }
+  }
 
   parser.assignable = false;
   return wrapNode(parser, context, {
@@ -562,7 +575,7 @@ const parseBinaryExpression = (
     // And combine the nodes on either side of the high-priority operator to a BinaryExpression.
     if (prec <= minPrec) return left;
 
-    nextToken(parser);
+    nextToken(parser, context);
 
     left = wrapNode(parser, context, {
       type:
@@ -594,7 +607,7 @@ const parsePrefixUpdateExpression = (
     parser.token & Token.Musk
   ] as ESTree.UpdateOperator;
 
-  nextToken(parser);
+  nextToken(parser, context);
 
   const argument = parseLeftHandSideExpression(parser, context);
 
@@ -629,7 +642,7 @@ const parsePostfixUpdateExpression = (
     parser.token & Token.Musk
   ] as ESTree.UpdateOperator;
 
-  nextToken(parser);
+  nextToken(parser, context);
 
   return wrapNode(parser, context, {
     type: 'UpdateExpression',
@@ -665,7 +678,7 @@ const parseNewExpression = (parser: IParserState, context: Context) => {
   const meta = parseIdentifier(parser, context);
 
   // new.target
-  if (consumeOpt(parser, Token.Period)) {
+  if (consumeOpt(parser, context, Token.Period)) {
     if (context & Context.NewTarget && parser.token === Token.Target) {
       parser.assignable = false;
       return parseMetaProperty(parser, context, meta);
@@ -693,7 +706,7 @@ const parseSuperCallOrSuperProperty = (
   parser: IParserState,
   context: Context,
 ) => {
-  nextToken(parser);
+  nextToken(parser, context);
 
   switch (parser.token) {
     case Token.LeftParen: {
@@ -801,7 +814,7 @@ const parseExpressionStatement = (
   context: Context,
   expression: ESTree.Expression,
 ): ESTree.ExpressionStatement => {
-  consumeSemicolon(parser);
+  consumeSemicolon(parser, context);
   return wrapNode(parser, context, {
     type: 'ExpressionStatement',
     expression,
@@ -820,7 +833,7 @@ const parseAssignmentExpression = (
     }
     parser.assignable = false;
     const operator = KeywordTokenTable[parser.token & Token.Musk];
-    nextToken(parser);
+    nextToken(parser, context);
     const right = parseExpression(parser, context);
 
     const AssignmentExpression = {
@@ -853,9 +866,9 @@ const parseConditionalExpression = (
 
   if (parser.token !== Token.QuestionMark) return node;
 
-  consume(parser, Token.QuestionMark);
+  consume(parser, context, Token.QuestionMark);
   const consequent = parseExpression(parser, context);
-  consume(parser, Token.Colon);
+  consume(parser, context, Token.Colon);
   const alternate = parseExpression(parser, context);
   parser.assignable = false;
 
@@ -889,7 +902,7 @@ const parseMemberExpression = (
 
       /* Property */
       case Token.Period:
-        nextToken(parser);
+        nextToken(parser, context);
 
         const property = parseIdentifier(parser, context);
 
@@ -903,11 +916,11 @@ const parseMemberExpression = (
 
       /* Property */
       case Token.LeftBracket: {
-        nextToken(parser);
+        nextToken(parser, context);
 
         const property = parseExpression(parser, context);
 
-        consume(parser, Token.RightBracket);
+        consume(parser, context, Token.RightBracket);
 
         parser.assignable = false;
 
@@ -986,7 +999,7 @@ export function parseSequenceExpression(
     expr: ESTree.ExpressionStatement,
   ) => {
     const expressions: ESTree.ExpressionStatement[] = [expr];
-    while (consumeOpt(parser, Token.Comma)) {
+    while (consumeOpt(parser, context, Token.Comma)) {
       expressions.push(parseExpression(parser, context));
     }
 
@@ -1009,7 +1022,6 @@ const parseBindingIdentifier = (
   const { tokenValue, token } = parser;
 
   // TODO
-  // 1. Strict Mode behavior
   // 2. let, const binding
   // 3. await
   // 4. yield
@@ -1022,7 +1034,11 @@ const parseBindingIdentifier = (
     report(parser, Errors.ExpectedBindingIdent);
   }
 
-  nextToken(parser);
+  if (context & Context.Strict && parser.token & Token.IsFutureReserved) {
+    report(parser, Errors.UnexpectedStrictReserved);
+  }
+
+  nextToken(parser, context);
 
   return wrapNode(parser, context, {
     type: 'Identifier',
@@ -1061,7 +1077,7 @@ export const parseBindingProperty = (
     ) {
       shorthand = true;
       value = parseAssignmentExpression(parser, context, key, true);
-    } else if (consumeOpt(parser, Token.Colon)) {
+    } else if (consumeOpt(parser, context, Token.Colon)) {
       value = parseBindingElement(parser, context);
     }
   }
@@ -1087,7 +1103,7 @@ export const parseObjectBindingPattern = (
   //    {BindingPropertyList[?Yield, ?Await]}
   //    {BindingPropertyList[?Yield, ?Await],BindingRestProperty[?Yield, ?Await]opt}
 
-  consume(parser, Token.LeftBrace);
+  consume(parser, context, Token.LeftBrace);
 
   const properties: ESTree.Property[] = [];
 
@@ -1096,10 +1112,10 @@ export const parseObjectBindingPattern = (
 
     if (parser.token !== Token.Comma) break;
 
-    nextToken(parser);
+    nextToken(parser, context);
   }
 
-  consume(parser, Token.RightBrace);
+  consume(parser, context, Token.RightBrace);
 
   return wrapNode(parser, context, {
     type: 'ObjectPattern',
@@ -1146,7 +1162,7 @@ const parseVariableDeclaration = (
   const id = parseBindingPatternOrIdentifier(parser, context);
 
   if (parser.token === Token.Assign) {
-    nextToken(parser);
+    nextToken(parser, context);
     init = parseExpression(parser, context);
   }
 
@@ -1165,7 +1181,7 @@ const parseVariableDeclarationList = (
   const list: ESTree.VariableDeclarator[] = [
     parseVariableDeclaration(parser, context),
   ];
-  while (consumeOpt(parser, Token.Comma)) {
+  while (consumeOpt(parser, context, Token.Comma)) {
     bindingCount++;
     list.push(parseVariableDeclaration(parser, context));
   }
@@ -1186,13 +1202,13 @@ const parseBlockStatement = (
   //    {StatementListopt}
 
   const body: ESTree.Statement[] = [];
-  consumeOpt(parser, Token.LeftBrace);
+  consumeOpt(parser, context, Token.LeftBrace);
 
   while (parser.token !== Token.RightBrace) {
     body.push(parseStatementListItem(parser, context));
   }
 
-  consumeOpt(parser, Token.RightBrace);
+  consumeOpt(parser, context, Token.RightBrace);
 
   return wrapNode(parser, context, {
     type: 'BlockStatement',
@@ -1205,11 +1221,11 @@ const parseVariableStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.VariableDeclaration => {
-  nextToken(parser);
+  nextToken(parser, context);
 
   const declarations = parseVariableDeclarationList(parser, context);
 
-  consumeSemicolon(parser);
+  consumeSemicolon(parser, context);
 
   return wrapNode(parser, context, {
     type: 'VariableDeclaration',
@@ -1226,7 +1242,7 @@ export const parseReturnStatement = (
     report(parser, Errors.IllegalReturn);
   }
 
-  nextToken(parser);
+  nextToken(parser, context);
 
   const noLineTerminatorHere =
     (parser.token & Token.IsAutoSemicolon) === Token.IsAutoSemicolon &&
@@ -1236,7 +1252,7 @@ export const parseReturnStatement = (
     ? null
     : parseExpression(parser, context);
 
-  consumeSemicolon(parser);
+  consumeSemicolon(parser, context);
 
   return wrapNode(parser, context, {
     type: 'ReturnStatement',
@@ -1248,7 +1264,7 @@ export const parseEmptyStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.EmptyStatement => {
-  nextToken(parser);
+  nextToken(parser, context);
   return wrapNode(parser, context, {
     type: 'EmptyStatement',
   });
@@ -1258,7 +1274,7 @@ export const parseThrowStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.ThrowStatement => {
-  nextToken(parser);
+  nextToken(parser, context);
 
   // Can't break the line
   if (parser.lineTerminatorBeforeNextToken) {
@@ -1267,7 +1283,7 @@ export const parseThrowStatement = (
 
   const argument: ESTree.Expression = parseExpression(parser, context);
 
-  consumeSemicolon(parser);
+  consumeSemicolon(parser, context);
 
   return wrapNode(parser, context, {
     type: 'ThrowStatement',
@@ -1279,8 +1295,8 @@ const parseDebuggerStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.DebuggerStatement => {
-  nextToken(parser);
-  consumeSemicolon(parser);
+  nextToken(parser, context);
+  consumeSemicolon(parser, context);
   return wrapNode(parser, context, {
     type: 'DebuggerStatement',
   });
@@ -1290,11 +1306,17 @@ const parseConsequentOrAlternative = (
   parser: IParserState,
   context: Context,
 ): ESTree.Statement => {
-  // TODO:
-  // FunctionDeclarations in IfStatement Statement Clauses
+  // B.3.4 FunctionDeclarations in IfStatement Statement Clauses
+  // This production only applies when parsing non-strict code
   // https://tc39.es/ecma262/#sec-functiondeclarations-in-ifstatement-statement-clauses
 
-  return parseStatement(parser, context);
+  const isParseStatment =
+    context & (Context.OptionsDisableWebCompat | Context.Strict) ||
+    parser.token !== Token.FunctionKeyword;
+
+  return isParseStatment
+    ? parseStatement(parser, context)
+    : parseFunctionDeclaration(parser, context);
 };
 
 const parseIfStatement = (
@@ -1304,17 +1326,17 @@ const parseIfStatement = (
   // if (Expression) Statement else Statement;
   // if (Expression) Statement;
 
-  nextToken(parser);
+  nextToken(parser, context);
 
-  consume(parser, Token.LeftParen);
+  consume(parser, context, Token.LeftParen);
 
   const expression = parseExpression(parser, context);
 
-  consume(parser, Token.RightParen);
+  consume(parser, context, Token.RightParen);
 
   const consequent = parseConsequentOrAlternative(parser, context);
 
-  const alternate = consumeOpt(parser, Token.ElseKeyword)
+  const alternate = consumeOpt(parser, context, Token.ElseKeyword)
     ? parseConsequentOrAlternative(parser, context)
     : null;
 
@@ -1330,9 +1352,9 @@ const parseForStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.ForStatement | ESTree.ForInStatement | ESTree.ForOfStatement => {
-  consume(parser, Token.ForKeyword);
+  consume(parser, context, Token.ForKeyword);
 
-  consume(parser, Token.LeftParen);
+  consume(parser, context, Token.LeftParen);
 
   let init: ESTree.Expression | null | any = null;
   let test: ESTree.Expression | null = null;
@@ -1347,7 +1369,7 @@ const parseForStatement = (
       // TODO: Let / Const
 
       if (parser.token === Token.VarKeyword) {
-        nextToken(parser);
+        nextToken(parser, context);
 
         init = wrapNode(parser, context, {
           type: 'VariableDeclaration',
@@ -1370,7 +1392,7 @@ const parseForStatement = (
     }
   }
 
-  if (consumeOpt(parser, Token.InKeyword)) {
+  if (consumeOpt(parser, context, Token.InKeyword)) {
     if (!parser.assignable) {
       report(parser, Errors.CantAssignToForLoop, 'in');
     }
@@ -1378,7 +1400,7 @@ const parseForStatement = (
     mapToAssignment(init);
 
     const right = parseExpression(parser, context);
-    consume(parser, Token.RightParen);
+    consume(parser, context, Token.RightParen);
 
     return wrapNode(parser, context, {
       type: 'ForInStatement',
@@ -1388,7 +1410,7 @@ const parseForStatement = (
     });
   }
 
-  if (consumeOpt(parser, Token.OfKeyword)) {
+  if (consumeOpt(parser, context, Token.OfKeyword)) {
     if (!parser.assignable) {
       report(parser, Errors.CantAssignToForLoop, 'of');
     }
@@ -1396,7 +1418,7 @@ const parseForStatement = (
     mapToAssignment(init);
 
     const right = parseExpression(parser, context);
-    consume(parser, Token.RightParen);
+    consume(parser, context, Token.RightParen);
 
     return wrapNode(parser, context, {
       type: 'ForOfStatement',
@@ -1409,21 +1431,21 @@ const parseForStatement = (
 
   init = parseHigherExpression(parser, context, init);
 
-  consume(parser, Token.Semicolon);
+  consume(parser, context, Token.Semicolon);
 
   // test
   if (parser.token !== Token.Semicolon) {
     test = parseSequenceExpression(parser, context);
   }
 
-  consume(parser, Token.Semicolon);
+  consume(parser, context, Token.Semicolon);
 
   // update
   if (parser.token !== Token.RightParen) {
     update = parseSequenceExpression(parser, context);
   }
 
-  consume(parser, Token.RightParen);
+  consume(parser, context, Token.RightParen);
 
   return wrapNode(parser, context, {
     type: 'ForStatement',
@@ -1438,11 +1460,11 @@ const parseWhileStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.WhileStatement => {
-  consume(parser, Token.WhileKeyword);
-  consume(parser, Token.LeftParen);
+  consume(parser, context, Token.WhileKeyword);
+  consume(parser, context, Token.LeftParen);
 
   const test = parseSequenceExpression(parser, context);
-  consume(parser, Token.RightParen);
+  consume(parser, context, Token.RightParen);
   const body = parseStatement(parser, context | Context.InIteration);
 
   return wrapNode(parser, context, {
@@ -1456,13 +1478,13 @@ const parseDoWhileStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.DoWhileStatement => {
-  consume(parser, Token.DoKeyword);
+  consume(parser, context, Token.DoKeyword);
   const body = parseStatement(parser, context | Context.InIteration);
-  consume(parser, Token.WhileKeyword);
-  consume(parser, Token.LeftParen);
+  consume(parser, context, Token.WhileKeyword);
+  consume(parser, context, Token.LeftParen);
   const test = parseSequenceExpression(parser, context);
-  consume(parser, Token.RightParen);
-  consumeOpt(parser, Token.Semicolon);
+  consume(parser, context, Token.RightParen);
+  consumeOpt(parser, context, Token.Semicolon);
 
   return wrapNode(parser, context, {
     type: 'DoWhileStatement',
@@ -1480,17 +1502,17 @@ const parseClause = (
 ): ESTree.SwitchCase => {
   let test: ESTree.Expression | null = null;
   const consequent: ESTree.Statement[] = [];
-  if (consumeOpt(parser, Token.CaseKeyword)) {
+  if (consumeOpt(parser, context, Token.CaseKeyword)) {
     test = parseSequenceExpression(parser, context);
   } else {
-    consume(parser, Token.DefaultKeyword);
+    consume(parser, context, Token.DefaultKeyword);
     if (hasDefaultKey.value) {
       report(parser, Errors.MultipleDefaultsInSwitch);
     }
     hasDefaultKey.value = true;
   }
 
-  consume(parser, Token.Colon);
+  consume(parser, context, Token.Colon);
 
   while (
     parser.token !== Token.RightBrace &&
@@ -1538,14 +1560,14 @@ const parseSwitchStatement = (
   // DefaultClause:
   //    default : StatementList?
 
-  consume(parser, Token.SwitchKeyword);
-  consume(parser, Token.LeftParen);
+  consume(parser, context, Token.SwitchKeyword);
+  consume(parser, context, Token.LeftParen);
   const discriminant = parseSequenceExpression(parser, context);
-  consume(parser, Token.RightParen);
-  consume(parser, Token.LeftBrace);
+  consume(parser, context, Token.RightParen);
+  consume(parser, context, Token.LeftBrace);
 
   const cases = parseCaseBlock(parser, context);
-  consume(parser, Token.RightBrace);
+  consume(parser, context, Token.RightBrace);
 
   return wrapNode(parser, context, {
     type: 'SwitchStatement',
@@ -1560,7 +1582,7 @@ const parseContinueStatement = (
 ): ESTree.ContinueStatement => {
   if (!(context & Context.InIteration)) report(parser, Errors.IllegalContinue);
 
-  consume(parser, Token.ContinueKeyword);
+  consume(parser, context, Token.ContinueKeyword);
 
   const label: ESTree.Identifier | null = null;
 
@@ -1571,7 +1593,7 @@ const parseContinueStatement = (
   ) {
   }
 
-  consumeSemicolon(parser);
+  consumeSemicolon(parser, context);
 
   return wrapNode(parser, context, {
     type: 'ContinueStatement',
@@ -1583,7 +1605,7 @@ const parseBreakStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.BreakStatement => {
-  consume(parser, Token.BreakKeyword);
+  consume(parser, context, Token.BreakKeyword);
 
   const label: ESTree.Identifier | null = null;
 
@@ -1594,7 +1616,7 @@ const parseBreakStatement = (
   ) {
   }
 
-  consumeSemicolon(parser);
+  consumeSemicolon(parser, context);
 
   return wrapNode(parser, context, {
     type: 'BreakStatement',
@@ -1610,10 +1632,10 @@ const parseWithStatement = (
     report(parser, Errors.StrictWith);
   }
 
-  consume(parser, Token.WithKeyword);
-  consume(parser, Token.LeftParen);
+  consume(parser, context, Token.WithKeyword);
+  consume(parser, context, Token.LeftParen);
   const object = parseSequenceExpression(parser, context);
-  consume(parser, Token.RightParen);
+  consume(parser, context, Token.RightParen);
 
   const body = parseStatement(parser, context);
 
@@ -1630,9 +1652,9 @@ const parseCatchClause = (
 ): ESTree.CatchClause => {
   let param: ESTree.Pattern | null = null;
 
-  if (consumeOpt(parser, Token.LeftParen)) {
+  if (consumeOpt(parser, context, Token.LeftParen)) {
     param = parseBindingPatternOrIdentifier(parser, context);
-    consume(parser, Token.RightParen);
+    consume(parser, context, Token.RightParen);
   }
 
   const body = parseBlockStatement(parser, context);
@@ -1648,13 +1670,13 @@ const parseTryStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.TryStatement => {
-  consume(parser, Token.TryKeyword);
+  consume(parser, context, Token.TryKeyword);
 
   const block = parseBlockStatement(parser, context);
-  const handler = consumeOpt(parser, Token.CatchKeyword)
+  const handler = consumeOpt(parser, context, Token.CatchKeyword)
     ? parseCatchClause(parser, context)
     : null;
-  const finalizer = consumeOpt(parser, Token.FinallyKeyword)
+  const finalizer = consumeOpt(parser, context, Token.FinallyKeyword)
     ? parseBlockStatement(parser, context)
     : null;
 
@@ -1793,7 +1815,7 @@ const parseFunctionDeclaration = (
   parser: IParserState,
   context: Context,
 ): ESTree.FunctionDeclaration => {
-  nextToken(parser);
+  nextToken(parser, context);
 
   // TODO Async Function
   const isAsync = false;
@@ -1889,13 +1911,13 @@ const parseClassBody = (
 ): ESTree.ClassBody => {
   const classElementList: ESTree.MethodDefinition[] = [];
 
-  if (consumeOpt(parser, Token.LeftBrace)) {
+  if (consumeOpt(parser, context, Token.LeftBrace)) {
     while (parser.token !== Token.RightBrace) {
       if (parser.token === Token.RightBrace) break;
       classElementList.push(parseClassElement(parser, context));
-      consumeOpt(parser, Token.Comma);
+      consumeOpt(parser, context, Token.Comma);
     }
-    consume(parser, Token.RightBrace);
+    consume(parser, context, Token.RightBrace);
   }
 
   return wrapNode(parser, context, {
@@ -1916,10 +1938,12 @@ const parseClassDeclaration = (
   parser: IParserState,
   context: Context,
 ): ESTree.ClassDeclaration => {
-  consume(parser, Token.ClassKeyword);
+  consume(parser, context, Token.ClassKeyword);
 
   let id: ESTree.Expression | null = null;
   let superClass: ESTree.Expression | null = null;
+
+  context |= Context.Strict;
 
   if (parser.token & Token.IsIdentifier) {
     id = parseBindingIdentifier(parser, context);
@@ -1929,7 +1953,7 @@ const parseClassDeclaration = (
     report(parser, Errors.MissingClassName);
   }
 
-  if (consumeOpt(parser, Token.ExtendsKeyword)) {
+  if (consumeOpt(parser, context, Token.ExtendsKeyword)) {
     superClass = parseLeftHandSideExpression(parser, context);
     context |= Context.SuperCall;
   } else {
@@ -1974,7 +1998,7 @@ const parseStatementListItem = (
 
 const parseStatementList = (parser: IParserState, context: Context) => {
   // Initialize token
-  nextToken(parser);
+  nextToken(parser, context);
 
   const statements: ESTree.Statement[] = [];
 

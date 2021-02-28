@@ -30,7 +30,7 @@ export const enum Errors {
   UnexpectedToken,
   AwaitInParameter,
   YieldInParameter,
-  InvalidExponentationLHS,
+  InvalidExponentiationLHS,
   UnterminatedRegExp,
   UnexpectedTokenRegExpFlag,
   DuplicateRegExpFlag,

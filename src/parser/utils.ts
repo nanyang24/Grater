@@ -1,22 +1,26 @@
 import { nextToken } from '../tokenizer/scanner';
-import { IParserState } from './type';
+import { Context, IParserState } from './type';
 import { Token } from '../tokenizer/token';
 
-export function consume(parser: IParserState, t: Token): any {
+export function consume(parser: IParserState, context: Context, t: Token): any {
   if (parser.token !== t) {
     throw Error;
   }
 
-  nextToken(parser);
+  nextToken(parser, context);
 }
 
-export function consumeOpt(parser: IParserState, t: Token): boolean {
+export function consumeOpt(
+  parser: IParserState,
+  context: Context,
+  t: Token,
+): boolean {
   if (parser.token !== t) return false;
-  nextToken(parser);
+  nextToken(parser, context);
   return true;
 }
 
-export function consumeSemicolon(parser: IParserState): void {
+export function consumeSemicolon(parser: IParserState, context: Context): void {
   // https://tc39.es/ecma262/#sec-automatic-semicolon-insertion
   // https://tc39.es/ecma262/#sec-line-terminators
 
@@ -26,7 +30,7 @@ export function consumeSemicolon(parser: IParserState): void {
   ) {
     throw Error;
   }
-  consumeOpt(parser, Token.Semicolon);
+  consumeOpt(parser, context, Token.Semicolon);
 }
 
 export function mapToAssignment(node: any): void {

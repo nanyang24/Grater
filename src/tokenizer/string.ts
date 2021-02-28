@@ -1,4 +1,4 @@
-import { IParserState } from '../parser/type';
+import { Context, IParserState } from '../parser/type';
 import { Token } from './token';
 import { forwardChar, betterFromCharCode, toHex } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
@@ -36,7 +36,11 @@ function handleErrors(code: Escape, state: IParserState) {
   }
 }
 
-const transformEscape = (parser: IParserState, char: number): number => {
+const transformEscape = (
+  parser: IParserState,
+  context: Context,
+  char: number,
+): number => {
   switch (char) {
     // SingleEscapeCharacter::one of ' " \ b f n r t v
     // https://tc39.es/ecma262/#prod-SingleEscapeCharacter
@@ -66,7 +70,7 @@ const transformEscape = (parser: IParserState, char: number): number => {
       let nextIndex = parser.index + 1;
       let nextColumn = parser.column + 1;
 
-      // TODO: if(strict) return error
+      if (context & Context.Strict) return Escape.StrictOctal;
 
       // An Octal number beginning with 0/1/2/3, It will be composed of 3 significant numbers
       // e.g: '\123', '\231', '\321'
@@ -208,7 +212,11 @@ export /**
  * @param {number} quote
  * @returns {*}
  */
-const scanString = (parser: IParserState, quote: number): any => {
+const scanString = (
+  parser: IParserState,
+  context: Context,
+  quote: number,
+): any => {
   let curChar = forwardChar(parser);
   let sumString = '';
   let starSign = parser.index;
@@ -235,7 +243,7 @@ const scanString = (parser: IParserState, quote: number): any => {
       if (curChar > 0x7e) {
         sumString += betterFromCharCode(curChar);
       } else {
-        const code = transformEscape(parser, curChar);
+        const code = transformEscape(parser, context, curChar);
 
         // No error
         if (code >= 0) {

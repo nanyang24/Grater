@@ -45,8 +45,8 @@ export const ErrorMessage: {
   [Errors.AwaitInParameter]: 'Await expression not allowed in formal parameter',
   [Errors.YieldInParameter]: 'Yield expression not allowed in formal parameter',
   [Errors.InvalidEscapedKeyword]: "Unexpected token: 'escaped keyword'",
-  [Errors.InvalidExponentationLHS]:
-    'Unary expressions as the left operand of an exponentation expression must be disambiguated with parentheses',
+  [Errors.InvalidExponentiationLHS]:
+    'Unary expressions as the left operand of an exponentiation expression must be disambiguated with parentheses',
   [Errors.AsyncFunctionInSingleStatementContext]:
     'Async functions can only be declared at the top level or inside a block',
   [Errors.UnterminatedRegExp]: 'Unterminated regular expression',
@@ -189,7 +189,7 @@ export const ErrorMessage: {
   [Errors.InvalidDecoratorSemicolon]:
     'Decorators must not be followed by a semicolon',
   [Errors.StrictDelete]:
-    'Calling delete on expression not allowed in strict mode',
+    'Delete of an unqualified identifier in strict mode',
   [Errors.InvalidPatternTail]: 'Pattern can not have a tail',
   [Errors.InvalidTernaryYield]:
     'Can not have a `yield` expression on the left side of a ternary',

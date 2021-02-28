@@ -1,4 +1,4 @@
-import { IParserState } from '../parser/type';
+import { Context, IParserState } from '../parser/type';
 import { Token } from './token';
 import { forwardChar, toHex, letterCaseInsensitive } from './utils';
 import { CharTypes, CharSymbol, Chars } from './charClassifier';
@@ -81,7 +81,11 @@ export const enum NumberKind {
  *      DecimalBigIntegerLiteral
  *      NonDecimalIntegerLiteral    BigIntLiteralSuffix
  */
-export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
+export const scanNumber = (
+  parser: IParserState,
+  context: Context,
+  isFloat?: boolean,
+): Token => {
   let char = parser.currentChar;
   let value: any = 0;
   let allowSeparator = false;
@@ -186,7 +190,9 @@ export const scanNumber = (parser: IParserState, isFloat?: boolean): Token => {
       //     JavaScript ignores the leading 0 and treats the octal literal as a decimal
       //     '098' --> '98'
       if (CharTypes[char] & CharSymbol.Octal) {
-        // if strict, error
+        // Octal escape sequences are not allowed in strict mode
+        if (context & Context.Strict) report(parser, Errors.StrictOctalEscape);
+
         type = NumberKind.ImplicitOctal;
         while (CharTypes[char] & CharSymbol.Octal) {
           value = value * 8 + (char - Chars.Zero);
