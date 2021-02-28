@@ -1,10 +1,12 @@
 import { nextToken } from '../tokenizer/scanner';
 import { Context, IParserState } from './type';
 import { Token } from '../tokenizer/token';
+import { KeywordTokenTable } from '../tokenizer/utils';
+import { report, Errors } from '../error-handler';
 
 export function consume(parser: IParserState, context: Context, t: Token): any {
   if (parser.token !== t) {
-    throw Error;
+    report(parser, Errors.ExpectedToken, KeywordTokenTable[t & Token.Musk]);
   }
 
   nextToken(parser, context);
@@ -28,7 +30,11 @@ export function consumeSemicolon(parser: IParserState, context: Context): void {
     (parser.token & Token.IsAutoSemicolon) !== Token.IsAutoSemicolon &&
     !parser.lineTerminatorBeforeNextToken
   ) {
-    throw Error;
+    report(
+      parser,
+      Errors.UnexpectedToken,
+      KeywordTokenTable[parser.token & Token.Musk],
+    );
   }
   consumeOpt(parser, context, Token.Semicolon);
 }
