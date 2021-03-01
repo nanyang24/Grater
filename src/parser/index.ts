@@ -9,6 +9,7 @@ import {
   mapToAssignment,
 } from './utils';
 import { report, Errors } from '../error-handler';
+import { wrapNode } from './common';
 
 // typings
 import * as ESTree from '../es-tree';
@@ -20,64 +21,90 @@ import {
   PropertyKindMap,
 } from './type';
 
-const wrapNode = <T extends any>(
-  parser: IParserState,
-  context: Context,
-  node: T,
-): T => {
-  return node;
-};
-
 const parseThisExpression = (parser: IParserState, context: Context) => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
   parser.assignable = false;
-  return wrapNode(parser, context, {
-    type: 'ThisExpression',
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ThisExpression',
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 const parsePrimitiveLiteral = (parser: IParserState, context: Context) => {
-  const { tokenValue } = parser;
+  const { tokenValue, linePos, colPos } = parser;
 
   // Maybe a little mental burden
   const value = JSON.parse(tokenValue);
 
   nextToken(parser, context);
   parser.assignable = false;
-  return wrapNode(parser, context, {
-    type: 'Literal',
-    value,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'Literal',
+      value,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 const parseLiteral = (
   parser: IParserState,
   context: Context,
 ): ESTree.Literal => {
-  const { tokenValue } = parser;
+  const { tokenValue, linePos, colPos } = parser;
 
   nextToken(parser, context);
 
   parser.assignable = false;
 
-  return wrapNode(parser, context, {
-    type: 'Literal',
-    value: tokenValue,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'Literal',
+      value: tokenValue,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 const parseIdentifier = (
   parser: IParserState,
   context: Context,
 ): ESTree.Identifier => {
-  const { tokenValue } = parser;
+  const { tokenValue, linePos, colPos } = parser;
 
   nextToken(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'Identifier',
-    name: tokenValue,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'Identifier',
+      name: tokenValue,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 export function parseComputedPropertyName(
@@ -101,6 +128,8 @@ const parsePropertyDefinition = (
   let kind = PropertyKind.None;
   let computed = false;
   let shorthand = false;
+
+  const { linePos, colPos } = parser;
 
   // LiteralPropertyName
   if (parser.token & (Token.IsIdentifier | Token.Keyword)) {
@@ -136,21 +165,31 @@ const parsePropertyDefinition = (
     throw Error;
   }
 
-  return wrapNode(parser, context, {
-    type: 'Property',
-    key,
-    value,
-    kind: PropertyKindMap[kind],
-    computed,
-    method: false,
-    shorthand,
-  }) as ESTree.Property;
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'Property',
+      key,
+      value,
+      kind: PropertyKindMap[kind],
+      computed,
+      method: false,
+      shorthand,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  ) as ESTree.Property;
 };
 
 const parseObjectExpression = (
   parser: IParserState,
   context: Context,
 ): ESTree.ObjectExpression => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
 
   const properties: ESTree.Property[] = [];
@@ -165,10 +204,18 @@ const parseObjectExpression = (
 
   consumeOpt(parser, context, Token.RightBrace);
 
-  const node = wrapNode(parser, context, {
-    type: 'ObjectExpression',
-    properties,
-  }) as ESTree.ObjectExpression;
+  const node = wrapNode(
+    parser,
+    context,
+    {
+      type: 'ObjectExpression',
+      properties,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  ) as ESTree.ObjectExpression;
 
   if (parser.token & Token.IsAssignPart) {
     if (parser.token !== Token.Assign) {
@@ -217,24 +264,36 @@ export const parseAssignmentElement = (
   context: Context,
   left: ESTree.ArrayExpression | ESTree.ObjectExpression,
 ): any => {
+  const { linePos, colPos } = parser;
+
   const operator = KeywordTokenTable[parser.token & Token.Musk];
   nextToken(parser, context);
 
   mapToAssignment(left);
   const right = parseExpression(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'AssignmentExpression',
-    left,
-    operator,
-    right,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'AssignmentExpression',
+      left,
+      operator,
+      right,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 const parseArrayExpression = (
   parser: IParserState,
   context: Context,
 ): ESTree.ArrayExpression => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
 
   const elements: (
@@ -266,10 +325,18 @@ const parseArrayExpression = (
 
   consumeOpt(parser, context, Token.RightBracket);
 
-  const node = wrapNode(parser, context, {
-    type: 'ArrayExpression',
-    elements,
-  }) as ESTree.ArrayExpression;
+  const node = wrapNode(
+    parser,
+    context,
+    {
+      type: 'ArrayExpression',
+      elements,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  ) as ESTree.ArrayExpression;
 
   if (parser.token & Token.IsAssignPart) {
     if (parser.token !== Token.Assign) {
@@ -321,6 +388,8 @@ export const parseBindingElement = (
   parser: IParserState,
   context: Context,
 ): ESTree.Parameter => {
+  const { linePos, colPos } = parser;
+
   let node;
 
   if (parser.token & Token.IsPatternStart) {
@@ -333,11 +402,16 @@ export const parseBindingElement = (
   if (consumeOpt(parser, context, Token.Assign)) {
     const right = parseExpression(parser, context);
 
-    node = wrapNode(parser, context, {
-      type: 'AssignmentPattern',
-      left: node,
-      right,
-    });
+    node = wrapNode(
+      parser,
+      context,
+      {
+        type: 'AssignmentPattern',
+        left: node,
+        right,
+      },
+      { linePos, colPos },
+    );
   }
 
   return wrapNode(parser, context, node) as ESTree.Parameter;
@@ -418,6 +492,8 @@ export const parseFunctionBody = (
   parser: IParserState,
   context: Context,
 ): ESTree.FunctionBody => {
+  const { linePos, colPos } = parser;
+
   consumeOpt(parser, context, Token.LeftBrace);
 
   const body: ESTree.Statement[] = [];
@@ -430,13 +506,20 @@ export const parseFunctionBody = (
 
   consumeOpt(parser, context, Token.RightBrace);
 
-  return wrapNode(parser, context, {
-    type: 'BlockStatement',
-    body,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'BlockStatement',
+      body,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseFunctionExpression = (parser: IParserState, context: Context) => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
 
   // TODO Async Function
@@ -460,17 +543,24 @@ const parseFunctionExpression = (parser: IParserState, context: Context) => {
 
   parser.assignable = false;
 
-  return wrapNode(parser, context, {
-    type: 'FunctionExpression',
-    id,
-    params,
-    body,
-    async: isAsync,
-    generator: isGenerator,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'FunctionExpression',
+      id,
+      params,
+      body,
+      async: isAsync,
+      generator: isGenerator,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseUnaryExpression = (parser: IParserState, context: Context) => {
+  const { linePos, colPos } = parser;
+
   const operator = KeywordTokenTable[
     parser.token & Token.Musk
   ] as ESTree.UnaryOperator;
@@ -491,12 +581,17 @@ const parseUnaryExpression = (parser: IParserState, context: Context) => {
   }
 
   parser.assignable = false;
-  return wrapNode(parser, context, {
-    type: 'UnaryExpression',
-    operator,
-    argument,
-    prefix: true,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'UnaryExpression',
+      operator,
+      argument,
+      prefix: true,
+    },
+    { linePos, colPos },
+  );
 };
 
 // AdditiveExpression[Yield, Await]:
@@ -559,6 +654,8 @@ const parseBinaryExpression = (
   left: ESTree.BinaryExpression | ESTree.Expression,
   minPrec: number,
 ) => {
+  const { linePos, colPos } = parser;
+
   let curToken: Token;
   let prec: number;
 
@@ -577,21 +674,26 @@ const parseBinaryExpression = (
 
     nextToken(parser, context);
 
-    left = wrapNode(parser, context, {
-      type:
-        (curToken & Token.IsLogical) === Token.IsLogical ||
-        (curToken & Token.Nullish) === Token.Nullish
-          ? 'LogicalExpression'
-          : 'BinaryExpression',
-      left,
-      right: parseBinaryExpression(
-        parser,
-        context,
-        parseLeftHandSideExpression(parser, context),
-        prec,
-      ),
-      operator: KeywordTokenTable[curToken & Token.Musk],
-    });
+    left = wrapNode(
+      parser,
+      context,
+      {
+        type:
+          (curToken & Token.IsLogical) === Token.IsLogical ||
+          (curToken & Token.Nullish) === Token.Nullish
+            ? 'LogicalExpression'
+            : 'BinaryExpression',
+        left,
+        right: parseBinaryExpression(
+          parser,
+          context,
+          parseLeftHandSideExpression(parser, context),
+          prec,
+        ),
+        operator: KeywordTokenTable[curToken & Token.Musk],
+      },
+      { linePos, colPos },
+    );
 
     parser.assignable = false;
   }
@@ -603,6 +705,8 @@ const parsePrefixUpdateExpression = (
   parser: IParserState,
   context: Context,
 ): ESTree.UpdateExpression => {
+  const { linePos, colPos } = parser;
+
   const operator = KeywordTokenTable[
     parser.token & Token.Musk
   ] as ESTree.UpdateOperator;
@@ -617,12 +721,17 @@ const parsePrefixUpdateExpression = (
 
   parser.assignable = false;
 
-  return wrapNode(parser, context, {
-    type: 'UpdateExpression',
-    argument,
-    operator,
-    prefix: true,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'UpdateExpression',
+      argument,
+      operator,
+      prefix: true,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parsePostfixUpdateExpression = (
@@ -636,6 +745,8 @@ const parsePostfixUpdateExpression = (
     report(parser, Errors.InvalidLHSPostOp);
   }
 
+  const { linePos, colPos } = parser;
+
   parser.assignable = false;
 
   const operator = KeywordTokenTable[
@@ -644,12 +755,17 @@ const parsePostfixUpdateExpression = (
 
   nextToken(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'UpdateExpression',
-    argument: operand,
-    operator,
-    prefix: false,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'UpdateExpression',
+      argument: operand,
+      operator,
+      prefix: false,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseMetaProperty = (
@@ -657,12 +773,19 @@ const parseMetaProperty = (
   context: Context,
   meta: ESTree.Identifier,
 ) => {
+  const { linePos, colPos } = parser;
+
   const property = parseIdentifier(parser, context);
-  return wrapNode(parser, context, {
-    type: 'MetaProperty',
-    meta,
-    property,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'MetaProperty',
+      meta,
+      property,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseNewExpression = (parser: IParserState, context: Context) => {
@@ -674,6 +797,7 @@ const parseNewExpression = (parser: IParserState, context: Context) => {
   //    ImportMeta
   // NewTarget:
   //    new.target
+  const { linePos, colPos } = parser;
 
   const meta = parseIdentifier(parser, context);
 
@@ -695,17 +819,24 @@ const parseNewExpression = (parser: IParserState, context: Context) => {
     parser.token === Token.LeftParen ? parseArguments(parser, context) : [];
   parser.assignable = false;
 
-  return wrapNode(parser, context, {
-    type: 'NewExpression',
-    callee,
-    arguments: args,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'NewExpression',
+      callee,
+      arguments: args,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseSuperCallOrSuperProperty = (
   parser: IParserState,
   context: Context,
 ) => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
 
   switch (parser.token) {
@@ -723,7 +854,7 @@ const parseSuperCallOrSuperProperty = (
       report(parser, Errors.UnexpectedToken, 'super');
   }
 
-  return wrapNode(parser, context, { type: 'Super' });
+  return wrapNode(parser, context, { type: 'Super' }, { linePos, colPos });
 };
 
 /**
@@ -814,11 +945,18 @@ const parseExpressionStatement = (
   context: Context,
   expression: ESTree.Expression,
 ): ESTree.ExpressionStatement => {
+  const { linePos, colPos } = parser;
+
   consumeSemicolon(parser, context);
-  return wrapNode(parser, context, {
-    type: 'ExpressionStatement',
-    expression,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ExpressionStatement',
+      expression,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseAssignmentExpression = (
@@ -827,6 +965,8 @@ const parseAssignmentExpression = (
   left: ESTree.Expression,
   isPattern = false,
 ): ESTree.AssignmentExpression | ESTree.Expression => {
+  const { linePos, colPos } = parser;
+
   if (parser.token & Token.IsAssignPart) {
     if (!parser.assignable) {
       report(parser, Errors.InvalidLHS);
@@ -851,6 +991,7 @@ const parseAssignmentExpression = (
       parser,
       context,
       isPattern ? AssignmentPattern : AssignmentExpression,
+      { linePos, colPos },
     );
   }
 
@@ -862,6 +1003,8 @@ const parseConditionalExpression = (
   context: Context,
   left: ESTree.Expression,
 ): ESTree.ConditionalExpression => {
+  const { linePos, colPos } = parser;
+
   const node = parseBinaryExpression(parser, context, left, /* minPrec */ 4);
 
   if (parser.token !== Token.QuestionMark) return node;
@@ -872,12 +1015,17 @@ const parseConditionalExpression = (
   const alternate = parseExpression(parser, context);
   parser.assignable = false;
 
-  return wrapNode(parser, context, {
-    type: 'ConditionalExpression',
-    test: node,
-    consequent,
-    alternate,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ConditionalExpression',
+      test: node,
+      consequent,
+      alternate,
+    },
+    { linePos, colPos },
+  );
 };
 
 /**
@@ -892,6 +1040,8 @@ const parseMemberExpression = (
   context: Context,
   expr: ESTree.Expression,
 ): ESTree.Expression => {
+  const { linePos, colPos } = parser;
+
   while (parser.token & Token.IsPropertyOrCallExpression) {
     switch (parser.token) {
       /* Update expression */
@@ -906,12 +1056,17 @@ const parseMemberExpression = (
 
         const property = parseIdentifier(parser, context);
 
-        expr = wrapNode(parser, context, {
-          type: 'MemberExpression',
-          object: expr,
-          computed: false,
-          property,
-        });
+        expr = wrapNode(
+          parser,
+          context,
+          {
+            type: 'MemberExpression',
+            object: expr,
+            computed: false,
+            property,
+          },
+          { linePos, colPos },
+        );
         break;
 
       /* Property */
@@ -924,12 +1079,17 @@ const parseMemberExpression = (
 
         parser.assignable = false;
 
-        expr = wrapNode(parser, context, {
-          type: 'MemberExpression',
-          object: expr,
-          computed: true,
-          property,
-        });
+        expr = wrapNode(
+          parser,
+          context,
+          {
+            type: 'MemberExpression',
+            object: expr,
+            computed: true,
+            property,
+          },
+          { linePos, colPos },
+        );
         break;
       }
 
@@ -939,11 +1099,16 @@ const parseMemberExpression = (
 
         parser.assignable = false;
 
-        expr = wrapNode(parser, context, {
-          type: 'CallExpression',
-          callee: expr,
-          arguments: args,
-        });
+        expr = wrapNode(
+          parser,
+          context,
+          {
+            type: 'CallExpression',
+            callee: expr,
+            arguments: args,
+          },
+          { linePos, colPos },
+        );
         break;
       }
 
@@ -998,15 +1163,25 @@ export function parseSequenceExpression(
     context: Context,
     expr: ESTree.ExpressionStatement,
   ) => {
+    const { linePos, colPos } = parser;
+
     const expressions: ESTree.ExpressionStatement[] = [expr];
     while (consumeOpt(parser, context, Token.Comma)) {
       expressions.push(parseExpression(parser, context));
     }
 
-    return wrapNode(parser, context, {
-      type: 'SequenceExpression',
-      expressions,
-    });
+    return wrapNode(
+      parser,
+      context,
+      {
+        type: 'SequenceExpression',
+        expressions,
+      },
+      {
+        linePos,
+        colPos,
+      },
+    );
   };
 
   const expression = parseExpression(parser, context);
@@ -1019,7 +1194,9 @@ const parseBindingIdentifier = (
   parser: IParserState,
   context: Context,
 ): ESTree.Identifier => {
-  const { tokenValue, token } = parser;
+  const {
+    tokenValue, token, linePos, colPos,
+  } = parser;
 
   // TODO
   // 2. let, const binding
@@ -1040,10 +1217,18 @@ const parseBindingIdentifier = (
 
   nextToken(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'Identifier',
-    name: tokenValue,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'Identifier',
+      name: tokenValue,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 export const parseBindingProperty = (
@@ -1058,6 +1243,7 @@ export const parseBindingProperty = (
   //    BindingPattern[?Yield, ?Await]Initializeropt
   // SingleNameBinding[Yield, Await]:
   //    BindingIdentifier[?Yield, ?Await]Initializeropt
+  const { linePos, colPos } = parser;
 
   let key;
   let value;
@@ -1082,15 +1268,20 @@ export const parseBindingProperty = (
     }
   }
 
-  return wrapNode(parser, context, {
-    type: 'Property',
-    key,
-    value,
-    kind: PropertyKindMap[kind],
-    computed,
-    method: false,
-    shorthand,
-  }) as ESTree.Property;
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'Property',
+      key,
+      value,
+      kind: PropertyKindMap[kind],
+      computed,
+      method: false,
+      shorthand,
+    },
+    { linePos, colPos },
+  ) as ESTree.Property;
 };
 
 export const parseObjectBindingPattern = (
@@ -1102,6 +1293,7 @@ export const parseObjectBindingPattern = (
   //    {BindingRestProperty[?Yield, ?Await]}
   //    {BindingPropertyList[?Yield, ?Await]}
   //    {BindingPropertyList[?Yield, ?Await],BindingRestProperty[?Yield, ?Await]opt}
+  const { linePos, colPos } = parser;
 
   consume(parser, context, Token.LeftBrace);
 
@@ -1117,10 +1309,15 @@ export const parseObjectBindingPattern = (
 
   consume(parser, context, Token.RightBrace);
 
-  return wrapNode(parser, context, {
-    type: 'ObjectPattern',
-    properties,
-  }) as ESTree.ObjectPattern;
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ObjectPattern',
+      properties,
+    },
+    { linePos, colPos },
+  ) as ESTree.ObjectPattern;
 };
 // eslint-disable-next-line @typescript-eslint/no-empty-function
 export const parseArrayBindingPattern = () => {};
@@ -1153,6 +1350,8 @@ const parseVariableDeclaration = (
   parser: IParserState,
   context: Context,
 ): ESTree.VariableDeclarator => {
+  const { linePos, colPos } = parser;
+
   let init:
     | ESTree.Expression
     | ESTree.BindingPattern
@@ -1166,11 +1365,16 @@ const parseVariableDeclaration = (
     init = parseExpression(parser, context);
   }
 
-  return wrapNode(parser, context, {
-    type: 'VariableDeclarator',
-    id,
-    init,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'VariableDeclarator',
+      id,
+      init,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseVariableDeclarationList = (
@@ -1201,6 +1405,8 @@ const parseBlockStatement = (
   // Block:
   //    {StatementListopt}
 
+  const { linePos, colPos } = parser;
+
   const body: ESTree.Statement[] = [];
   consumeOpt(parser, context, Token.LeftBrace);
 
@@ -1210,10 +1416,15 @@ const parseBlockStatement = (
 
   consumeOpt(parser, context, Token.RightBrace);
 
-  return wrapNode(parser, context, {
-    type: 'BlockStatement',
-    body,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'BlockStatement',
+      body,
+    },
+    { linePos, colPos },
+  );
 };
 
 // https://tc39.es/ecma262/#prod-VariableDeclaration
@@ -1221,17 +1432,24 @@ const parseVariableStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.VariableDeclaration => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
 
   const declarations = parseVariableDeclarationList(parser, context);
 
   consumeSemicolon(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'VariableDeclaration',
-    kind: 'var',
-    declarations,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'VariableDeclaration',
+      kind: 'var',
+      declarations,
+    },
+    { linePos, colPos },
+  );
 };
 
 export const parseReturnStatement = (
@@ -1241,6 +1459,7 @@ export const parseReturnStatement = (
   if (!(context & Context.Return)) {
     report(parser, Errors.IllegalReturn);
   }
+  const { linePos, colPos } = parser;
 
   nextToken(parser, context);
 
@@ -1254,26 +1473,40 @@ export const parseReturnStatement = (
 
   consumeSemicolon(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'ReturnStatement',
-    argument,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ReturnStatement',
+      argument,
+    },
+    { linePos, colPos },
+  );
 };
 
 export const parseEmptyStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.EmptyStatement => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
-  return wrapNode(parser, context, {
-    type: 'EmptyStatement',
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'EmptyStatement',
+    },
+    { linePos, colPos },
+  );
 };
 
 export const parseThrowStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.ThrowStatement => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
 
   // Can't break the line
@@ -1285,21 +1518,33 @@ export const parseThrowStatement = (
 
   consumeSemicolon(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'ThrowStatement',
-    argument,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ThrowStatement',
+      argument,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseDebuggerStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.DebuggerStatement => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
   consumeSemicolon(parser, context);
-  return wrapNode(parser, context, {
-    type: 'DebuggerStatement',
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'DebuggerStatement',
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseConsequentOrAlternative = (
@@ -1325,6 +1570,7 @@ const parseIfStatement = (
 ): ESTree.IfStatement => {
   // if (Expression) Statement else Statement;
   // if (Expression) Statement;
+  const { linePos, colPos } = parser;
 
   nextToken(parser, context);
 
@@ -1340,18 +1586,25 @@ const parseIfStatement = (
     ? parseConsequentOrAlternative(parser, context)
     : null;
 
-  return wrapNode(parser, context, {
-    type: 'IfStatement',
-    test: expression,
-    consequent,
-    alternate,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'IfStatement',
+      test: expression,
+      consequent,
+      alternate,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseForStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.ForStatement | ESTree.ForInStatement | ESTree.ForOfStatement => {
+  const { linePos, colPos } = parser;
+
   consume(parser, context, Token.ForKeyword);
 
   consume(parser, context, Token.LeftParen);
@@ -1369,13 +1622,20 @@ const parseForStatement = (
       // TODO: Let / Const
 
       if (parser.token === Token.VarKeyword) {
+        const { linePos, colPos } = parser;
+
         nextToken(parser, context);
 
-        init = wrapNode(parser, context, {
-          type: 'VariableDeclaration',
-          kind: 'var',
-          declarations: parseVariableDeclarationList(parser, context),
-        });
+        init = wrapNode(
+          parser,
+          context,
+          {
+            type: 'VariableDeclaration',
+            kind: 'var',
+            declarations: parseVariableDeclarationList(parser, context),
+          },
+          { linePos, colPos },
+        );
 
         parser.assignable = true;
       }
@@ -1402,12 +1662,17 @@ const parseForStatement = (
     const right = parseExpression(parser, context);
     consume(parser, context, Token.RightParen);
 
-    return wrapNode(parser, context, {
-      type: 'ForInStatement',
-      left: init,
-      right,
-      body: parseStatement(parser, context | Context.InIteration),
-    });
+    return wrapNode(
+      parser,
+      context,
+      {
+        type: 'ForInStatement',
+        left: init,
+        right,
+        body: parseStatement(parser, context | Context.InIteration),
+      },
+      { linePos, colPos },
+    );
   }
 
   if (consumeOpt(parser, context, Token.OfKeyword)) {
@@ -1420,13 +1685,18 @@ const parseForStatement = (
     const right = parseExpression(parser, context);
     consume(parser, context, Token.RightParen);
 
-    return wrapNode(parser, context, {
-      type: 'ForOfStatement',
-      left: init,
-      right,
-      body: parseStatement(parser, context | Context.InIteration),
-      await: false,
-    });
+    return wrapNode(
+      parser,
+      context,
+      {
+        type: 'ForOfStatement',
+        left: init,
+        right,
+        body: parseStatement(parser, context | Context.InIteration),
+        await: false,
+      },
+      { linePos, colPos },
+    );
   }
 
   init = parseHigherExpression(parser, context, init);
@@ -1447,19 +1717,26 @@ const parseForStatement = (
 
   consume(parser, context, Token.RightParen);
 
-  return wrapNode(parser, context, {
-    type: 'ForStatement',
-    init,
-    test,
-    update,
-    body: parseStatement(parser, context | Context.InIteration),
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ForStatement',
+      init,
+      test,
+      update,
+      body: parseStatement(parser, context | Context.InIteration),
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseWhileStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.WhileStatement => {
+  const { linePos, colPos } = parser;
+
   consume(parser, context, Token.WhileKeyword);
   consume(parser, context, Token.LeftParen);
 
@@ -1467,17 +1744,24 @@ const parseWhileStatement = (
   consume(parser, context, Token.RightParen);
   const body = parseStatement(parser, context | Context.InIteration);
 
-  return wrapNode(parser, context, {
-    type: 'WhileStatement',
-    test,
-    body,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'WhileStatement',
+      test,
+      body,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseDoWhileStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.DoWhileStatement => {
+  const { linePos, colPos } = parser;
+
   consume(parser, context, Token.DoKeyword);
   const body = parseStatement(parser, context | Context.InIteration);
   consume(parser, context, Token.WhileKeyword);
@@ -1486,11 +1770,16 @@ const parseDoWhileStatement = (
   consume(parser, context, Token.RightParen);
   consumeOpt(parser, context, Token.Semicolon);
 
-  return wrapNode(parser, context, {
-    type: 'DoWhileStatement',
-    test,
-    body,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'DoWhileStatement',
+      test,
+      body,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseClause = (
@@ -1500,6 +1789,8 @@ const parseClause = (
     value: boolean;
   },
 ): ESTree.SwitchCase => {
+  const { linePos, colPos } = parser;
+
   let test: ESTree.Expression | null = null;
   const consequent: ESTree.Statement[] = [];
   if (consumeOpt(parser, context, Token.CaseKeyword)) {
@@ -1522,11 +1813,16 @@ const parseClause = (
     consequent.push(parseStatementListItem(parser, context));
   }
 
-  return wrapNode(parser, context, {
-    type: 'SwitchCase',
-    test,
-    consequent,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'SwitchCase',
+      test,
+      consequent,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseCaseBlock = (
@@ -1559,6 +1855,7 @@ const parseSwitchStatement = (
   //    case Expression : StatementList?
   // DefaultClause:
   //    default : StatementList?
+  const { linePos, colPos } = parser;
 
   consume(parser, context, Token.SwitchKeyword);
   consume(parser, context, Token.LeftParen);
@@ -1569,11 +1866,16 @@ const parseSwitchStatement = (
   const cases = parseCaseBlock(parser, context);
   consume(parser, context, Token.RightBrace);
 
-  return wrapNode(parser, context, {
-    type: 'SwitchStatement',
-    discriminant,
-    cases,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'SwitchStatement',
+      discriminant,
+      cases,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseContinueStatement = (
@@ -1581,6 +1883,8 @@ const parseContinueStatement = (
   context: Context,
 ): ESTree.ContinueStatement => {
   if (!(context & Context.InIteration)) report(parser, Errors.IllegalContinue);
+
+  const { linePos, colPos } = parser;
 
   consume(parser, context, Token.ContinueKeyword);
 
@@ -1595,16 +1899,23 @@ const parseContinueStatement = (
 
   consumeSemicolon(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'ContinueStatement',
-    label,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ContinueStatement',
+      label,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseBreakStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.BreakStatement => {
+  const { linePos, colPos } = parser;
+
   consume(parser, context, Token.BreakKeyword);
 
   const label: ESTree.Identifier | null = null;
@@ -1618,10 +1929,15 @@ const parseBreakStatement = (
 
   consumeSemicolon(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'BreakStatement',
-    label,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'BreakStatement',
+      label,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseWithStatement = (
@@ -1632,6 +1948,8 @@ const parseWithStatement = (
     report(parser, Errors.StrictWith);
   }
 
+  const { linePos, colPos } = parser;
+
   consume(parser, context, Token.WithKeyword);
   consume(parser, context, Token.LeftParen);
   const object = parseSequenceExpression(parser, context);
@@ -1639,17 +1957,24 @@ const parseWithStatement = (
 
   const body = parseStatement(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'WithStatement',
-    object,
-    body,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'WithStatement',
+      object,
+      body,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseCatchClause = (
   parser: IParserState,
   context: Context,
 ): ESTree.CatchClause => {
+  const { linePos, colPos } = parser;
+
   let param: ESTree.Pattern | null = null;
 
   if (consumeOpt(parser, context, Token.LeftParen)) {
@@ -1659,17 +1984,24 @@ const parseCatchClause = (
 
   const body = parseBlockStatement(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'CatchClause',
-    param,
-    body,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'CatchClause',
+      param,
+      body,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseTryStatement = (
   parser: IParserState,
   context: Context,
 ): ESTree.TryStatement => {
+  const { linePos, colPos } = parser;
+
   consume(parser, context, Token.TryKeyword);
 
   const block = parseBlockStatement(parser, context);
@@ -1680,12 +2012,17 @@ const parseTryStatement = (
     ? parseBlockStatement(parser, context)
     : null;
 
-  return wrapNode(parser, context, {
-    type: 'TryStatement',
-    block,
-    handler,
-    finalizer,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'TryStatement',
+      block,
+      handler,
+      finalizer,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseHigherExpression = (
@@ -1815,6 +2152,8 @@ const parseFunctionDeclaration = (
   parser: IParserState,
   context: Context,
 ): ESTree.FunctionDeclaration => {
+  const { linePos, colPos } = parser;
+
   nextToken(parser, context);
 
   // TODO Async Function
@@ -1838,14 +2177,19 @@ const parseFunctionDeclaration = (
 
   const body = parseFunctionBody(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'FunctionDeclaration',
-    id,
-    params,
-    body,
-    async: isAsync,
-    generator: isGenerator,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'FunctionDeclaration',
+      id,
+      params,
+      body,
+      async: isAsync,
+      generator: isGenerator,
+    },
+    { linePos, colPos },
+  );
 };
 
 // MethodDefinition:
@@ -1861,23 +2205,32 @@ const parseMethodDefinition = (
   parser: IParserState,
   context: Context,
 ): ESTree.FunctionExpression => {
+  const { linePos, colPos } = parser;
+
   const params = parseUniqueFormalParameters(parser, context);
   const body = parseFunctionBody(parser, context);
 
-  return wrapNode(parser, context, {
-    type: 'FunctionExpression',
-    params,
-    body,
-    async: false, // TODO
-    generator: false,
-    id: null,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'FunctionExpression',
+      params,
+      body,
+      async: false, // TODO
+      generator: false,
+      id: null,
+    },
+    { linePos, colPos },
+  );
 };
 
 const parseClassElement = (
   parser: IParserState,
   context: Context,
 ): ESTree.MethodDefinition => {
+  const { linePos, colPos } = parser;
+
   let kind = 'method';
   let computed = false;
   let key: ESTree.Expression | null = null;
@@ -1895,20 +2248,27 @@ const parseClassElement = (
     kind = 'constructor';
   }
 
-  return wrapNode(parser, context, {
-    type: 'MethodDefinition',
-    kind,
-    static: false,
-    computed,
-    key,
-    value,
-  }) as ESTree.MethodDefinition;
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'MethodDefinition',
+      kind,
+      static: false,
+      computed,
+      key,
+      value,
+    },
+    { linePos, colPos },
+  ) as ESTree.MethodDefinition;
 };
 
 const parseClassBody = (
   parser: IParserState,
   context: Context,
 ): ESTree.ClassBody => {
+  const { linePos, colPos } = parser;
+
   const classElementList: ESTree.MethodDefinition[] = [];
 
   if (consumeOpt(parser, context, Token.LeftBrace)) {
@@ -1920,10 +2280,18 @@ const parseClassBody = (
     consume(parser, context, Token.RightBrace);
   }
 
-  return wrapNode(parser, context, {
-    type: 'ClassBody',
-    body: classElementList,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ClassBody',
+      body: classElementList,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 // https://tc39.es/ecma262/#prod-ClassDeclaration
@@ -1938,6 +2306,8 @@ const parseClassDeclaration = (
   parser: IParserState,
   context: Context,
 ): ESTree.ClassDeclaration => {
+  const { linePos, colPos } = parser;
+
   consume(parser, context, Token.ClassKeyword);
 
   let id: ESTree.Expression | null = null;
@@ -1965,12 +2335,20 @@ const parseClassDeclaration = (
 
   parser.assignable = false;
 
-  return wrapNode(parser, context, {
-    type: 'ClassDeclaration',
-    id,
-    superClass,
-    body,
-  });
+  return wrapNode(
+    parser,
+    context,
+    {
+      type: 'ClassDeclaration',
+      id,
+      superClass,
+      body,
+    },
+    {
+      linePos,
+      colPos,
+    },
+  );
 };
 
 const parseStatementListItem = (
@@ -2016,6 +2394,7 @@ const parserMachine = (
 ): ESTree.Program => {
   if (options != null) {
     // Add to Context
+    if (options.loc) context |= Context.OptionsLoc;
     if (options.impliedStrict) context |= Context.Strict;
     if (options.disableWebCompat) context |= Context.OptionsDisableWebCompat;
   }
@@ -2033,6 +2412,13 @@ const parserMachine = (
     sourceType,
     body,
   };
+
+  if (context & Context.OptionsLoc) {
+    nodeTree.loc = {
+      start: { line: 1, column: 0 },
+      end: { line: parserState.line, column: parserState.column },
+    };
+  }
 
   return nodeTree;
 };

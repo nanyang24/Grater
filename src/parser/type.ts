@@ -50,7 +50,9 @@ export const enum Context {
   Global = 1 << 4,
   InIteration = 1 << 5, // while/for-in/for-of/for
   Return = 1 << 6,
-  OptionsDisableWebCompat = 1 << 7,
+
+  OptionsLoc = 1 << 50,
+  OptionsDisableWebCompat = 1 << 51,
 }
 
 export interface Options {
@@ -62,4 +64,9 @@ export interface Options {
   module?: boolean;
   jsx?: boolean;
   ts?: boolean;
+}
+
+export interface ExtraInfo {
+  linePos: number;
+  colPos: number;
 }
