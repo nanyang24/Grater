@@ -1,10 +1,11 @@
 {
   "name": "grater",
   "version": "0.0.1",
-  "description": "An ECMAScript AST parser",
-  "main": "index.js",
+  "description": "An ECMAScript parser",
+  "main": "dist/cjs/grater.js",
+  "module": "dist/esm/grater.js",
   "license": "Apache-2.0",
-  "author": "NanYang <nanyang24@hotmail.com>",
+  "author": "NanYang <nanyang1412@gmail.com>",
   "homepage": "https://github.com/nanyang24/Grater",
   "repository": {
     "type": "git",
@@ -18,6 +19,10 @@
   },
   "scripts": {
     "dev": "tsc-watch --onSuccess 'node ./dist/grater.js'",
+    "build": "rm -rf dist && yarn build:esm && yarn build:cjs",
+    "build:es2015": "tsc --module es2015 --target es2015 --outDir dist/es2015",
+    "build:esm": "tsc --module es2015 --target es5 --outDir dist/esm",
+    "build:cjs": "tsc --module commonjs --target es5 --outDir dist/cjs",
     "lint": "eslint . --ext .ts",
     "lint-fix": "eslint . --ext .ts --fix",
     "prettier-format": "prettier --config .prettierrc 'src/**/*.ts' --write",
