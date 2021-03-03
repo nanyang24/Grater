@@ -340,3 +340,9 @@ export function isDecimalDigit(char: number): boolean {
 export function letterCaseInsensitive(letter: number): number {
   return letter | 32;
 }
+
+export function jumpToNewlne(parser: IParserState) {
+  parser.currentChar = parser.source.charCodeAt(++parser.index);
+  parser.column = 0;
+  parser.line++;
+}

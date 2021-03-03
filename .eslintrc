@@ -54,6 +54,7 @@
     "no-useless-escape": 0,
     "no-throw-literal": 0,
     "no-console": 1,
+    "no-labels": 0,
     "no-use-before-define": ["error", { "variables": false }],
     "max-len": [
       "error",

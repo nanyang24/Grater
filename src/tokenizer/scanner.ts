@@ -3,8 +3,14 @@ import { scanIdentifier } from './identifier';
 import { scanString } from './string';
 import { scanNumber } from './numeric';
 import { Token } from './token';
-import { TokenPickUpFromASCII, forwardChar, isDecimalDigit } from './utils';
+import {
+  TokenPickUpFromASCII,
+  forwardChar,
+  isDecimalDigit,
+  jumpToNewlne,
+} from './utils';
 import { Chars } from './charClassifier';
+import { skipSingleLine } from './comment';
 
 export function scan(parser: IParserState, context: Context): Token {
   const lastIsCR = false;
@@ -199,6 +205,11 @@ export function scan(parser: IParserState, context: Context): Token {
         case Token.Divide: {
           forwardChar(parser);
 
+          if (parser.currentChar === Chars.Slash) {
+            skipSingleLine(parser);
+            break;
+          }
+
           return Token.Divide;
         }
 
@@ -308,6 +319,12 @@ export function scan(parser: IParserState, context: Context): Token {
         //  `A`...`Z`, `_internal`, `$value`
         case Token.Identifier: {
           return scanIdentifier(parser);
+        }
+
+        case Token.CarriageReturn: {
+          jumpToNewlne(parser);
+
+          break;
         }
 
         case Token.LineFeed: {
