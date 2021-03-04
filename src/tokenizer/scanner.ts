@@ -10,11 +10,9 @@ import {
   jumpToNewlne,
 } from './utils';
 import { Chars } from './charClassifier';
-import { skipSingleLine } from './comment';
+import { skipSingleLine, skipMultiLine } from './comment';
 
 export function scan(parser: IParserState, context: Context): Token {
-  const lastIsCR = false;
-
   // scan the whole stream
   while (parser.index < parser.end) {
     parser.tokenPos = parser.index;
@@ -207,7 +205,11 @@ export function scan(parser: IParserState, context: Context): Token {
 
           if (parser.currentChar === Chars.Slash) {
             skipSingleLine(parser);
-            break;
+            continue;
+          }
+          if (parser.currentChar === Chars.Asterisk) {
+            skipMultiLine(parser);
+            continue;
           }
 
           return Token.Divide;
@@ -328,10 +330,6 @@ export function scan(parser: IParserState, context: Context): Token {
         }
 
         case Token.LineFeed: {
-          if (!lastIsCR) {
-            parser.column = 0;
-            parser.line++;
-          }
           parser.currentChar = parser.source.charCodeAt(++parser.index);
           parser.lineTerminatorBeforeNextToken = true;
 
