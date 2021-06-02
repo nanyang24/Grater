@@ -104,7 +104,7 @@ describe('Numeric', () => {
     for (const [token, op, value] of tokens) {
         it(`scans '${op}' at the end`, () => {
           const state = createParserState(op);
-          const found = scan(state);
+          const found = scan(state, Context.Empty);
     
           assert.deepEqual(
             {
@@ -124,15 +124,15 @@ describe('Numeric', () => {
     }
 
 
-  failViaScan('fails on "0x"', '0x');
-  failViaScan('fails on "0xG"', '0xG');
-  failViaScan('fails on "0Xg"', '0Xg');
-  failViaScan('fails on "0X"', '0X');
-  failViaScan('fails on "0o"', '0o');
-  failViaScan('fails on "0o8"', '0o8');
-  failViaScan('fails on "0b2"', '0b2');
-  failViaScan('fails on "00b0"', '00b0');
-  failViaScan('fails on "0b"', '0b');
+  failViaScan('fails on "0x"', '0x', Context.Empty);
+  failViaScan('fails on "0xG"', '0xG', Context.Empty);
+  failViaScan('fails on "0Xg"', '0Xg', Context.Empty);
+  failViaScan('fails on "0X"', '0X', Context.Empty);
+  failViaScan('fails on "0o"', '0o', Context.Empty);
+  failViaScan('fails on "0o8"', '0o8', Context.Empty);
+  failViaScan('fails on "0b2"', '0b2', Context.Empty);
+  // failViaScan('fails on "00b0"', '00b0', Context.Empty);
+  failViaScan('fails on "0b"', '0b', Context.Empty);
 
   // Strict
     //  failViaScan('fails on "00"', '00');

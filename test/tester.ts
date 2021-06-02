@@ -27,9 +27,9 @@ export const fail = (name: string, invalid: [string, Context][]) => {
   });
 };
 
-export const failViaScan = (name: string, source: string) => {
+export const failViaScan = (name: string, source: string, context: Context) => {
   it(name, () => {
     const state = createParserState(source);
-    t.throws(() => scan(state));
+    t.throws(() => scan(state, context));
   });
 }

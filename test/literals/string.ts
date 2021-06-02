@@ -195,12 +195,12 @@ describe('String', () => {
     [Token.StringLiteral, '"\\052"', '*'],
     [Token.StringLiteral, '""', ""],
     [Token.StringLiteral, '"\"', ""],
-    [Token.StringLiteral, '"\ "', ""],
+    [Token.StringLiteral, '"\"', ""],
     [Token.StringLiteral, `"\
     "`, "    "],
     [Token.StringLiteral, "''", ''],
     [Token.StringLiteral, "'\'", ''],
-    [Token.StringLiteral, "'\ '", ''],
+    [Token.StringLiteral, "'\'", ''],
     [Token.StringLiteral, `'\
     '`, '    '],  
     [Token.StringLiteral, '"\\u2028"', '\u2028'],
@@ -210,7 +210,7 @@ describe('String', () => {
   for (const [token, op, value] of tokens) {
     it(`scans '${op}' at the end`, () => {
       const state = createParserState(op);
-      const found = scan(state);
+      const found = scan(state, Context.Empty);
 
       assert.deepEqual(
         {
@@ -230,7 +230,7 @@ describe('String', () => {
 
     it(`scans '${op}' with more to go`, () => {
       const state = createParserState(`${op} `);
-      const found = scan(state);
+      const found = scan(state, Context.Empty);
 
       assert.deepEqual(
         {
@@ -255,27 +255,29 @@ describe('String', () => {
     ['"\\"', Context.Empty,],
     ["'\\'", Context.Empty,],
   ]);
-  failViaScan('fails on "\\\"', '"\\\"');
-  failViaScan('fails on "\\u000G"', '"\\u000G"');
-  failViaScan('fails on "\\u{1F_639}"', '"\\u{1F_639}"');
-  failViaScan("fails on '\\u{1F_639}'", "'\\u{1F_639}'");
-  failViaScan('fails on "\\u"', '"\\u"');
-  failViaScan("fails on '\\u'", "'\\u'");
-  failViaScan('fails on "\\8"', '"\\8"');
-  failViaScan('fails on "\\9', '"\\9"');
+  failViaScan('fails on "\\\"', '"\\\"', Context.Empty);
+  failViaScan('fails on "\\u000G"', '"\\u000G"', Context.Empty);
+  failViaScan('fails on "\\u{1F_639}"', '"\\u{1F_639}"', Context.Empty);
+  failViaScan("fails on '\\u{1F_639}'", "'\\u{1F_639}'", Context.Empty);
+  failViaScan('fails on "\\u"', '"\\u"', Context.Empty);
+  failViaScan("fails on '\\u'", "'\\u'", Context.Empty);
+  failViaScan('fails on "\\8"', '"\\8"', Context.Empty);
+  failViaScan('fails on "\\9', '"\\9"', Context.Empty);
   
-  failViaScan("fails on '\\\'", "'\\\'");
+  failViaScan("fails on '\\\'", "'\\\'", Context.Empty);
   failViaScan(
     `fails on "
     "`,
     `"
   "`,
+  Context.Empty,
   );
   failViaScan(
     `fails on '
     '`,
     `'
     '`,
+    Context.Empty
     );
     
     // Strict Mode:
