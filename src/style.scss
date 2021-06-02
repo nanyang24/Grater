@@ -1,0 +1,35 @@
+.app {
+  height: 100vh;
+  .editor-wrap {
+    > .editor-content {
+      width: 50%;
+      height: 100%;
+
+      &.ast-result {
+        .monaco-editor-background,
+        .margin {
+          background: #eee;
+        }
+      }
+    }
+
+    position: relative;
+    height: 100%;
+    display: flex;
+  }
+
+  .parse-error {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    color: red;
+    padding: 20px 30px;
+    background: transparent;
+  }
+}
+
+// Disable IntelliSense
+.monaco-editor .editor-widget {
+  display: none !important;
+  visibility: hidden !important;
+}
