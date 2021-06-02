@@ -266,7 +266,7 @@ export const parseAssignmentElement = (
 ): any => {
   const { linePos, colPos } = parser;
 
-  const operator = KeywordTokenTable[parser.token & Token.Musk];
+  const operator = KeywordTokenTable[parser.token & Token.Mask];
   nextToken(parser, context);
 
   mapToAssignment(left);
@@ -379,7 +379,7 @@ export const validateFunctionName = (parser: IParserState): any => {
     report(
       parser,
       Errors.UnexpectedToken,
-      KeywordTokenTable[parser.token & Token.Musk],
+      KeywordTokenTable[parser.token & Token.Mask],
     );
   }
 };
@@ -562,7 +562,7 @@ const parseUnaryExpression = (parser: IParserState, context: Context) => {
   const { linePos, colPos } = parser;
 
   const operator = KeywordTokenTable[
-    parser.token & Token.Musk
+    parser.token & Token.Mask
   ] as ESTree.UnaryOperator;
   nextToken(parser, context);
   const argument = parseLeftHandSideExpression(parser, context);
@@ -690,7 +690,7 @@ const parseBinaryExpression = (
           parseLeftHandSideExpression(parser, context),
           prec,
         ),
-        operator: KeywordTokenTable[curToken & Token.Musk],
+        operator: KeywordTokenTable[curToken & Token.Mask],
       },
       { linePos, colPos },
     );
@@ -708,7 +708,7 @@ const parsePrefixUpdateExpression = (
   const { linePos, colPos } = parser;
 
   const operator = KeywordTokenTable[
-    parser.token & Token.Musk
+    parser.token & Token.Mask
   ] as ESTree.UpdateOperator;
 
   nextToken(parser, context);
@@ -750,7 +750,7 @@ const parsePostfixUpdateExpression = (
   parser.assignable = false;
 
   const operator = KeywordTokenTable[
-    parser.token & Token.Musk
+    parser.token & Token.Mask
   ] as ESTree.UpdateOperator;
 
   nextToken(parser, context);
@@ -934,7 +934,7 @@ const parsePrimaryExpression = (
       report(
         parser,
         Errors.UnexpectedToken,
-        KeywordTokenTable[parser.token & Token.Musk],
+        KeywordTokenTable[parser.token & Token.Mask],
       );
     }
   }
@@ -972,7 +972,7 @@ const parseAssignmentExpression = (
       report(parser, Errors.InvalidLHS);
     }
     parser.assignable = false;
-    const operator = KeywordTokenTable[parser.token & Token.Musk];
+    const operator = KeywordTokenTable[parser.token & Token.Mask];
     nextToken(parser, context);
     const right = parseExpression(parser, context);
 
@@ -2427,7 +2427,7 @@ export default parserMachine;
 
 /**
 
-`const ny = 24`
+`const name = NanYang`
 
             Script
                |
@@ -2451,7 +2451,7 @@ LetOrConst BindingList  ';'
             |                  |
        IdentifierName         ...
             |                  |
-          'ny'               '24'
+         'name'            'NanYang'
 
 `ny = 24`
                      Statement

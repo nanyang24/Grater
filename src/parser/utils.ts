@@ -6,7 +6,7 @@ import { report, Errors } from '../error-handler';
 
 export function consume(parser: IParserState, context: Context, t: Token): any {
   if (parser.token !== t) {
-    report(parser, Errors.ExpectedToken, KeywordTokenTable[t & Token.Musk]);
+    report(parser, Errors.ExpectedToken, KeywordTokenTable[t & Token.Mask]);
   }
 
   nextToken(parser, context);
@@ -33,7 +33,7 @@ export function consumeSemicolon(parser: IParserState, context: Context): void {
     report(
       parser,
       Errors.UnexpectedToken,
-      KeywordTokenTable[parser.token & Token.Musk],
+      KeywordTokenTable[parser.token & Token.Mask],
     );
   }
   consumeOpt(parser, context, Token.Semicolon);

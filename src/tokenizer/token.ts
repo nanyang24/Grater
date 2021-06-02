@@ -5,7 +5,7 @@
 
 export enum Token {
   // https://stackoverflow.com/questions/6126439/what-does-0xff-do
-  Musk = 0xff,
+  Mask = 0xff,
 
   IsIdentifier = 1 << 12,
   IsStringOrNumber = 1 << 13,
