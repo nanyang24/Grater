@@ -2,6 +2,7 @@
   "name": "grater-editor",
   "version": "0.0.1",
   "private": true,
+  "homepage": "https://nanyang24.github.io/Grater",
   "dependencies": {
     "@babel/core": "7.12.3",
     "@pmmmwh/react-refresh-webpack-plugin": "0.4.3",
@@ -75,6 +76,8 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
+    "predeploy": "yarn build",
+    "deploy": "gh-pages -d build",
     "test": "node scripts/test.js"
   },
   "eslintConfig": {
