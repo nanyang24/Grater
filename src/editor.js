@@ -23,8 +23,17 @@ export default function Editor({
     handleChange(newValue);
   };
 
-  const editorDidMount = (editor) => {
+  const editorDidMount = (editor, monaco) => {
     editorInstance.current = editor;
+
+    if (handleChange) {
+      editor.focus();
+    }
+
+    import('monaco-themes/themes/Solarized-dark.json').then((data) => {
+      monaco.editor.defineTheme('monokai', data);
+      monaco.editor.setTheme('monokai');
+    });
   };
 
   return (
